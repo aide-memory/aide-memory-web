@@ -1,0 +1,107 @@
+# Architecture
+
+## How It All Works Together
+
+```
+You correct your agent
+        │
+        ▼
+   ┌─────────┐     ┌──────────────────┐     ┌────────────┐
+   │  Hooks   │────▶│  .aide/memories/  │────▶│  SQLite    │
+   │ (capture)│     │  (JSON files)    │     │  (cache)   │
+   └─────────┘     └──────────────────┘     └────────────┘
+                          │                        │
+                     git commit                    │
+                     git push                      │
+                          │                        ▼
+                     Team gets              ┌────────────┐
+                     memories via           │  MCP Server │
+                     git pull               │  (7 tools)  │
+                          │                 └────────────┘
+                          ▼                        │
+                   post-checkout                   ▼
+                   hook imports              Agent gets
+                   new memories              nudge on
+                                             file read
+```
+
+## Core Components
+
+### Hooks (Capture Layer)
+
+Four hooks run invisibly at key moments:
+
+- **PreToolUse** — Fires before the agent reads any file. Injects nudges about relevant memories.
+- **Stop** — Fires when the agent finishes a task. Extracts final decisions and stores them.
+- **UserPromptSubmit** — Fires when you correct the agent. Captures your feedback as a memory.
+- **PreCompact** — Fires before context compaction. Saves planning decisions before they're lost.
+
+### Memories (.aide/memories/)
+
+Every memory is a single JSON file, organized by layer:
+
+```
+.aide/
+├── memories/
+│   ├── preferences/
+│   │   └── src/components.json
+│   ├── technical/
+│   │   └── src/database/**/*.json
+│   ├── area_context/
+│   │   └── src/checkout/**/*.json
+│   └── guidelines/
+│       └── testing-standards.json
+└── aide.db
+```
+
+Memories are files. Files are committed. Git syncs them. No Docker, no vector database service, no API keys.
+
+### SQLite Cache (aide.db)
+
+Local cache for fast lookup and full-text search (FTS5). Rebuilds automatically from JSON files if deleted. Used for:
+
+- BM25-ranked search via FTS5
+- Fast path-scoped lookups
+- Fallback to LIKE-based search if FTS5 unavailable
+
+### MCP Server (7 Tools)
+
+The MCP server exposes 7 tools for agents:
+
+1. **aide_recall** — Get memories for a path (nudge, not dump)
+2. **aide_remember** — Store a new memory
+3. **aide_list** — List all memories in a scope
+4. **aide_search** — Full-text search with BM25 ranking
+5. **aide_forget** — Delete a memory
+6. **aide_update** — Update existing memory content
+7. **aide_config** — Inspect or modify configuration
+
+## Zero Infrastructure
+
+**No Docker.** No vector database service. No API keys. No cloud dependency.
+
+One npm package. SQLite for caching. JSON files for persistence. Git for sync. The agent's own model for reasoning — zero extra LLM cost.
+
+## Cross-Tool Sync
+
+Install in Claude Code, and your memories are available in Cursor immediately. The same `.aide/` directory is read by both tools. Edit in one, see changes in the other.
+
+## Team Sync via Git
+
+Memories committed to git are automatically available to team members:
+
+```bash
+# Your session captures a memory about test patterns
+# You commit it
+git add .aide/memories/
+git commit -m "Store test pattern preferences"
+git push
+
+# Your teammate pulls
+git pull
+
+# Their agent sees the nudge immediately
+# "3 memories exist for tests/**. Call aide_recall if relevant."
+```
+
+No Docker, no sync service, no authentication. Just git.

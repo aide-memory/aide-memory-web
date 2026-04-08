@@ -1,0 +1,197 @@
+import { Tabs, Callout, Steps } from 'nextra/components'
+
+# Quick Start
+
+Get AIDE Memory running in your project in two minutes.
+
+<Steps>
+
+### Install
+
+```bash
+npx aide-memory init
+```
+
+This command:
+- Creates the `.aide/` directory
+- Installs four hooks (PreToolUse, Stop, UserPromptSubmit, PreCompact)
+- Writes rules files for Claude Code and Cursor
+- Configures the MCP server
+- Zero config required
+
+### (Optional) Scan your project
+
+Generate initial memories from your codebase structure:
+
+```bash
+npx aide-memory init --scan
+```
+
+This scans your project and creates initial memories for common patterns, dependencies, and architecture patterns.
+
+### Work normally
+
+Start working with your agent. Hooks capture corrections automatically:
+- When you say "No, use composition here," the hook stores it as a memory
+- When the context window fills, the PreCompact hook saves planning decisions
+- When a task finishes, the Stop hook extracts final decisions
+
+### Check what's been captured
+
+```bash
+npx aide-memory list
+```
+
+View all captured memories:
+
+```bash
+npx aide-memory list --scope src/components/**
+npx aide-memory list --layer preferences
+```
+
+### Next session
+
+Your agent gets nudges automatically:
+
+```
+3 memories exist for src/components/**. Call aide_recall if relevant.
+```
+
+That is ~20 tokens. The agent decides whether those memories matter for the current task.
+
+</Steps>
+
+## Common Commands
+
+### List memories
+
+```bash
+# All memories
+npx aide-memory list
+
+# For a specific path
+npx aide-memory list --scope src/checkout/**
+
+# For a specific layer
+npx aide-memory list --layer preferences
+
+# Both
+npx aide-memory list --scope src/** --layer technical
+```
+
+### Search memories
+
+```bash
+# Full-text search
+npx aide-memory search "composition pattern"
+
+# With path scope
+npx aide-memory search "test utilities" --scope tests/**
+```
+
+### Delete a memory
+
+```bash
+npx aide-memory forget <memory-id>
+```
+
+### View memory details
+
+```bash
+npx aide-memory show <memory-id>
+```
+
+### Clear all memories
+
+```bash
+npx aide-memory reset
+```
+
+## Configuration
+
+Configure AIDE Memory via:
+
+```bash
+npx aide-memory config set <key> <value>
+npx aide-memory config get <key>
+```
+
+### Available settings
+
+- `embeddings.provider` — `transformers` (default) or `ollama`
+- `embeddings.model` — Model to use (Transformers.js or Ollama)
+- `sqlite.path` — Path to SQLite database (default: `.aide/aide.db`)
+- `hooks.enabled` — Enable/disable hooks globally
+
+## Using Multiple Editors
+
+AIDE Memory works with Claude Code and Cursor. Install in any project:
+
+```bash
+npx aide-memory init
+```
+
+The same `.aide/` directory is read by both tools. Memories captured in Claude Code are available in Cursor immediately.
+
+## Team Sharing
+
+Commit memories to git:
+
+```bash
+git add .aide/memories/
+git commit -m "Store team patterns and preferences"
+git push
+```
+
+Team members get the memories via:
+
+```bash
+git pull
+```
+
+No Docker, no sync service, no authentication. Just git.
+
+## Troubleshooting
+
+### Memories not being captured
+
+Check that hooks are installed:
+
+```bash
+npx aide-memory hooks list
+```
+
+If hooks are missing, reinstall:
+
+```bash
+npx aide-memory init
+```
+
+### Memory not showing up in next session
+
+Verify the memory exists:
+
+```bash
+npx aide-memory list
+```
+
+Verify the path scope matches your current file:
+
+```bash
+npx aide-memory list --scope src/components/**
+```
+
+### Full-text search not working
+
+Falls back automatically to LIKE-based search. To rebuild the FTS5 index:
+
+```bash
+npx aide-memory db rebuild
+```
+
+## Next Steps
+
+- **[Features](/docs/features)** — All 8 features explained
+- **[Architecture](/docs/architecture)** — How AIDE Memory works under the hood
+- **[Comparison](/docs/comparison)** — vs claude-mem and engram
+- **[FAQ](/docs/faq)** — Common questions

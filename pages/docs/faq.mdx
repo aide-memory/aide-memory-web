@@ -1,0 +1,157 @@
+import { Callout } from 'nextra/components'
+
+# FAQ
+
+## Is it free?
+
+Yes. All individual memory features are free with no limits. No usage caps, no memory count limits, no feature gates for solo developers.
+
+## Does it work with Cursor?
+
+Yes. AIDE Memory supports Claude Code and Cursor out of the box. The init command writes rules files for both editors and configures the MCP server. Same memories work across both tools.
+
+## Does it send data anywhere?
+
+No. Everything is local. Memories are JSON files on your disk. SQLite is a local cache. The MCP server communicates over stdio, not HTTP. Your data never leaves your machine unless you choose to commit it to your git repo.
+
+## How does it compare to claude-mem?
+
+claude-mem dumps all memories into the system prompt on every interaction (~2,000 tokens). AIDE Memory sends a 20-token nudge and lets the agent decide relevance.
+
+claude-mem requires Docker and ChromaDB. AIDE Memory requires only `npx`.
+
+claude-mem has a documented 72% summary failure rate and creates files in every directory. AIDE Memory keeps everything in one `.aide/` directory with 544 tests passing.
+
+See the [Comparison page](/docs/comparison) for details.
+
+## Can I use my own embedding model?
+
+Yes. AIDE Memory supports configurable embedding backends. Use the built-in Transformers.js pipeline for zero-setup local embeddings, or connect Ollama for a model you are already running.
+
+Configure via:
+
+```bash
+npx aide-memory config set embeddings.provider ollama
+npx aide-memory config set embeddings.model mistral
+```
+
+## What if I delete .aide/memories/?
+
+The SQLite cache (`aide.db`) rebuilds from the JSON files automatically. The memories are recovered unless you also delete the `.aide/` directory entirely.
+
+If you delete the entire `.aide/` directory, all memories are lost. Restore from git if you committed them.
+
+## How much disk space do memories use?
+
+Memories are small — each is a single JSON file (~1-5 KB). Even with thousands of memories, the entire `.aide/` directory is typically under 50 MB.
+
+## Can I share memories across projects?
+
+Memories are scoped to a path within a project. To reuse a memory pattern in another project, copy the JSON file:
+
+```bash
+# From project A
+cat .aide/memories/preferences/src/components/patterns.json
+
+# Copy to project B
+cp .aide/memories/preferences/src/components/patterns.json ../other-project/.aide/memories/preferences/src/
+```
+
+Or commit to a shared git repo and pull in other projects.
+
+## What happens if two team members edit the same memory?
+
+Git handles merges. If both edits are to the same memory file, you'll get a merge conflict. Resolve it manually:
+
+```bash
+# After git pull with conflicts
+git status
+# Edit the conflicted .aide/memories/<layer>/... file
+git add .
+git commit -m "Resolve memory conflict"
+```
+
+## Does AIDE Memory work offline?
+
+Yes. Everything runs locally. No API calls, no cloud services, no authentication. Works offline from day one.
+
+## Can I migrate from claude-mem or engram?
+
+AIDE Memory uses a different storage format (JSON files vs. ChromaDB/SQLite). Manual migration is not yet supported. We recommend starting fresh with AIDE Memory in your project.
+
+If you have specific use cases, file an issue on GitHub.
+
+## What's the license?
+
+AIDE Memory is licensed under the Functional Source License (FSL), which auto-converts to Apache 2.0 after 2 years. You can use AIDE Memory for free forever.
+
+## How do I report a bug?
+
+Open an issue on GitHub: https://github.com/aide-memory/aide-memory/issues
+
+Include:
+- Your Node version (`node --version`)
+- AIDE Memory version (`npx aide-memory --version`)
+- Steps to reproduce
+- Error output
+
+## How do I request a feature?
+
+Open a discussion on GitHub: https://github.com/aide-memory/aide-memory/discussions
+
+Or email support@aide-memory.dev
+
+## Can I contribute?
+
+Yes! AIDE Memory is open source. Check out the [GitHub repository](https://github.com/aide-memory/aide-memory) for contributing guidelines.
+
+## How does path scoping work exactly?
+
+Path scoping uses glob patterns with inheritance:
+
+- A memory for `src/**` applies everywhere under `src/`
+- A memory for `src/components/**` applies only under `src/components/`
+- More specific scopes take precedence when multiple memories match
+
+When the agent opens a file, AIDE Memory calculates which memories are relevant by matching the file path against all glob patterns.
+
+## Can I use AIDE Memory in a monorepo?
+
+Yes. Each package can have its own `.aide/` directory:
+
+```
+monorepo/
+├── packages/
+│   ├── frontend/
+│   │   └── .aide/
+│   └── backend/
+│       └── .aide/
+```
+
+Or share a single `.aide/` at the root with path scoping to keep memories separate.
+
+## What if the agent doesn't call aide_recall?
+
+The agent gets a nudge in the system message, but isn't forced to call the tool. If the agent decides the memory isn't relevant, it skips the recall.
+
+This is intentional — nudges respect the agent's judgment. If memories are being ignored, check:
+
+1. Is the memory path scope correct?
+2. Is the memory description clear?
+3. Is the nudge actually showing up in the logs?
+
+## How do I see nudges in the logs?
+
+Enable debug logging:
+
+```bash
+DEBUG=aide:* npx aide-memory list
+```
+
+Or check your editor's Claude Code extension logs for nudge messages.
+
+## Can I use AIDE Memory without git?
+
+Yes. AIDE Memory works in any project, git or not. Memories are stored locally in `.aide/`. You just won't get automatic team sync without git.
+
+To sync manually between machines, copy the `.aide/` directory.

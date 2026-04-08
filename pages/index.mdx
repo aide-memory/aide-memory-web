@@ -1,0 +1,89 @@
+import { Callout, Tabs } from 'nextra/components'
+
+# Your AI agent forgets everything you teach it. AIDE Memory fixes that.
+
+<Callout type="info">
+**Persistent, path-scoped memory for AI coding agents** — captured automatically by hooks, recalled with a 20-token nudge, synced through git.
+</Callout>
+
+## Quick Install
+
+```bash
+npx aide-memory init
+```
+
+**544 tests passing | Zero cloud dependencies | Works with Claude Code and Cursor**
+
+---
+
+## The Problem
+
+### Every AI coding session starts from zero.
+
+**Agents forget your corrections between sessions.**
+You teach your agent "shorter files, composition over inheritance, use the existing utility." Next session, it generates a 400-line component with five levels of ternaries and reimplements a function that already exists in your utils folder. Everything you taught it is gone.
+
+**Context vanishes during compaction.**
+You spend 45 minutes building a plan with your agent — skeleton loading states, backward compatibility, progressive disclosure. The context window fills. Compaction kicks in. The agent drops skeleton loading for spinners and removes the backward compat shim. It did not disagree with the plan. It forgot the plan existed. This is documented across 350+ GitHub issues in existing memory tools.
+
+**Agents won't save memories on their own.**
+We tested this. When memory tools are simply available as MCP tools, agents use them in 0 out of 10 prompts. Claude Code itself diagnosed the problem: "The tools are deferred... my trained behavior overrides the instruction... there's nothing in the tool flow that forces a pause." Availability is not adoption.
+
+---
+
+## How It Works
+
+### Step 1: Init (one command, two minutes)
+
+```bash
+npx aide-memory init
+```
+
+Creates the `.aide/` directory, installs four hooks, writes rules files for your editor, and configures the MCP server. Zero config required.
+
+### Step 2: Work normally (hooks capture automatically)
+
+Four hooks fire at the right moments — invisible to you:
+
+```
+PreToolUse     → Before the agent reads any file
+Stop           → When the agent finishes a task
+UserPromptSubmit → When you correct the agent
+PreCompact     → Before context compaction
+```
+
+When you say "No, don't use that pattern," the hook detects the correction and stores it as a memory. When compaction approaches, the hook extracts planning decisions before they are lost. You never interact with memory management directly.
+
+### Step 3: Recall (nudge, not dump)
+
+Next session, when your agent opens a file:
+
+```
+8 memories exist for src/checkout/**. Call aide_recall if relevant.
+```
+
+That is ~20 tokens. The agent decides whether those memories matter for the current task. If yes, it pulls them. If no, it moves on. Zero wasted context.
+
+Compare this to injecting every memory into the system prompt on every interaction (~2,000 tokens). The difference compounds across a full day of work.
+
+---
+
+## Get Started
+
+<Callout type="success">
+**Free. Local-only. Two minutes to install. Zero config.**
+</Callout>
+
+1. **Install:** `npx aide-memory init`
+2. **Work normally:** Hooks capture corrections automatically
+3. **Next session:** Your agent gets nudges automatically
+
+**Need help?** Check out the [Quick Start guide](/docs/quick-start), [Features](/docs/features), or [FAQ](/docs/faq).
+
+---
+
+## Links
+
+- **[Documentation](/docs)** — Full guides and API reference
+- **[GitHub](https://github.com/aide-memory/aide-memory)** — Source code and issue tracker
+- **[npm](https://www.npmjs.com/package/aide-memory)** — Install via npm

@@ -1,0 +1,35 @@
+# Comparison
+
+AIDE Memory is built to solve the core problems in existing memory tools.
+
+## Feature Comparison
+
+| Feature | AIDE Memory | claude-mem | engram |
+|---------|-------------|------------|--------|
+| **Adoption mechanism** | 4 hooks (100% automatic) | System prompt injection | None (0% voluntary) |
+| **Token cost per recall** | ~20 tokens (nudge) | ~2,000 tokens (full dump) | Variable |
+| **Path scoping** | Glob inheritance from day one | Folder Context Files (recent) | None |
+| **Storage** | JSON files + SQLite cache | ChromaDB + SQLite | SQLite |
+| **Infrastructure** | `npx`, nothing else | Docker + ChromaDB + HTTP server | Go binary |
+| **Memory reliability** | 544 tests, 0 controllable failures | 72% summary failure rate | Empty/ghost observations |
+| **File pollution** | One directory: `.aide/` | Creates files in every directory | Clean |
+| **Security** | Local-only, no network | Unauthenticated HTTP API on port 37777 | Windows Defender flags binary |
+| **Git sync** | Native (memories are files) | No | No |
+| **Compaction protection** | PreCompact hook saves decisions | No | No |
+| **Structured layers** | 4 layers (preferences, technical, area_context, guidelines) | Flat | Flat |
+| **License** | FSL (auto-converts Apache 2.0) | AGPL-3.0 | MIT |
+| **Price** | Free | Free | Free |
+
+## Why AIDE Memory is Different
+
+**Adoption, not availability.** When memory tools are simply available as optional MCP tools, agents use them 0 out of 10 times. AIDE Memory uses hooks to capture memories at the moment they happen — no user intervention required.
+
+**Token efficiency.** Dumping all memories into the system prompt on every interaction costs ~2,000 tokens. AIDE Memory sends a 20-token nudge and lets the agent decide relevance. Over a full day of work, this saves tens of thousands of tokens.
+
+**Path scoping from day one.** A memory about test utilities shouldn't appear when you're working in database code. AIDE Memory uses glob inheritance to surface memories only where they matter.
+
+**Git-native sync.** No Docker. No vector database service. No API keys. Memories are files. Files are committed. Git syncs them. Team members automatically get shared memories via `git pull`.
+
+**Compaction protection.** Context compaction is documented as a source of lost decisions across 350+ GitHub issues in existing tools. AIDE Memory has a PreCompact hook that extracts planning decisions before they're lost.
+
+**Structured layers.** Preferences, technical facts, area context, and team guidelines are stored separately, so recall can filter by layer and avoid noise.

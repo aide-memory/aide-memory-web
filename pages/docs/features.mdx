@@ -1,0 +1,61 @@
+# Features
+
+---
+
+## 1. Hook-Driven Capture
+
+Four hooks drive 100% adoption — not 0%. Corrections, decisions, and preferences are captured at the moment they happen, not when the agent feels like saving them.
+
+**Hooks:**
+- `PreToolUse` — Before the agent reads any file
+- `Stop` — When the agent finishes a task
+- `UserPromptSubmit` — When you correct the agent
+- `PreCompact` — Before context compaction
+
+---
+
+## 2. Path-Scoped Recall
+
+A memory about test utilities surfaces when you open test files, not when you open database migrations. Glob inheritance means `src/**` memories are available everywhere under `src/`, but `src/checkout/**` memories only surface in checkout code.
+
+---
+
+## 3. Nudge, Not Dump
+
+~20 tokens per nudge versus ~2,000 tokens dumped into the system prompt. The agent is told context exists and decides relevance. Over hundreds of file reads per day, this saves tens of thousands of tokens.
+
+---
+
+## 4. File-Per-Memory, Git Syncs
+
+Every memory is a single JSON file in `.aide/memories/<layer>/`. No separate sync mechanism. Memories are files. Files are committed. Git syncs them. Delete SQLite and it rebuilds from the JSON files.
+
+---
+
+## 5. Structured Memory Layers
+
+Four layers keep memories organized: 
+- `preferences` — Your coding style
+- `technical` — Codebase facts
+- `area_context` — File and module notes
+- `guidelines` — Team rules
+
+Recall filters by layer and path.
+
+---
+
+## 6. Cross-Tool Portability
+
+Claude Code and Cursor supported out of the box. Same memories, same hooks, same MCP server. Switch tools mid-task and your context follows you.
+
+---
+
+## 7. Full-Text Search
+
+BM25-ranked search via FTS5. Find any memory by keyword instantly. Falls back to LIKE-based search when FTS5 is unavailable.
+
+---
+
+## 8. No Cloud, No Docker, No API Keys
+
+Everything runs locally. One npm package, SQLite for caching, JSON files for persistence. Your memories never leave your machine unless you commit them to your repo.
