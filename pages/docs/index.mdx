@@ -1,3 +1,77 @@
-# Documentation
+# AIDE Memory
 
-Welcome to AIDE Memory documentation. Choose a topic to get started.
+**Structured, persistent, path-scoped memory for AI coding agents.**
+
+AI coding agents have a memory problem. Claude has `CLAUDE.md`, Cursor has `.cursorrules` — but these are static files with no structure, no path scoping, and no automatic capture. Every new session starts from scratch. Your agent doesn't remember what you taught it yesterday.
+
+aide-memory fixes that. Two minutes to set up. Zero config. No Docker, no cloud, no API keys.
+
+```bash
+npx aide-memory init
+```
+
+---
+
+## Why aide-memory?
+
+- **Your agent forgets corrections.** You told it to use `dayjs` not `moment` — next session, it reaches for `moment` again.
+- **Context files don't scale.** A flat `CLAUDE.md` with 200 lines of rules becomes noise. No way to scope rules to specific code areas.
+- **No automatic capture.** You have to manually write down what you taught the agent. Nobody does this.
+- **Editor lock-in.** What you teach in Claude Code doesn't carry to Cursor, and vice versa.
+
+aide-memory solves all four: structured layers, path-scoped recall, hook-driven auto-capture, and cross-editor via MCP.
+
+---
+
+## How It Works
+
+### 1. Hooks capture context automatically
+
+Four hooks fire during normal development — no manual effort required:
+
+| Hook | When | What it does |
+|------|------|-------------|
+| **PreToolUse** | Before file reads | Nudges agent: "N memories exist for this path" (~20 tokens) |
+| **Stop** | Task completion | Prompts agent to reflect and store learnings |
+| **UserPromptSubmit** | User corrects agent | Detects corrections, stores them as scoped memories |
+| **PreCompact** | Before context loss | Extracts decisions before they're compacted away |
+
+### 2. Memories are scoped to code paths
+
+A memory about authentication surfaces when the agent reads `src/auth/`, not when it reads `src/checkout/`. Path inheritance means `src/**` memories surface everywhere under `src/`.
+
+### 3. Four structured layers
+
+| Layer | Purpose | Example |
+|-------|---------|---------|
+| **preferences** | How you like to work | "Use single quotes, 2-space indent" |
+| **technical** | Facts about the stack | "Apollo needs useGraphQLGateway: true" |
+| **area_context** | Decisions for specific code | "Checkout uses Stripe, not PayPal" |
+| **guidelines** | Team principles | "API responses must use camelCase" |
+
+### 4. File-per-memory, git-synced
+
+Each memory is a human-readable JSON file in `.aide/memories/`. Commit them, push them, pull them. Your team's agents share the same context.
+
+---
+
+## What You Get
+
+- **7 MCP tools** — aide_recall, aide_remember, aide_update, aide_forget, aide_search, aide_memories, aide_import
+- **11 CLI commands** — recall, remember, update, forget, search, list, stats, config, sync, init, recall-log
+- **4 hooks** — automatic context capture with zero manual effort
+- **FTS5 search** — BM25-ranked full-text search across all memories
+- **Cross-editor** — works with Claude Code, Cursor, and any MCP-compatible client
+- **Local-first** — SQLite + JSON files, no cloud, no API keys, no accounts
+
+---
+
+## Get Started
+
+Ready to give your agent a memory? Head to the [Quick Start](/docs/quick-start) guide.
+
+Or explore:
+- [Features](/docs/features) — all capabilities explained
+- [Architecture](/docs/architecture) — how storage, hooks, and recall work
+- [Comparison](/docs/comparison) — how aide-memory stacks up against alternatives
+- [FAQ](/docs/faq) — common questions
