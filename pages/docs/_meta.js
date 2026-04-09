@@ -1,4 +1,5 @@
 export default {
+  'index': 'Overview',
   'quick-start': 'Quick Start',
   'features': 'Features',
   'comparison': 'Comparison',

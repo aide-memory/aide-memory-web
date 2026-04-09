@@ -1,4 +1,11 @@
 export default {
-  'index': 'Home',
+  'index': {
+    title: 'Home',
+    theme: {
+      layout: 'raw',
+      sidebar: false,
+      toc: false
+    }
+  },
   'docs': 'Documentation'
 }
