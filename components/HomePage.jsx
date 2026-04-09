@@ -44,7 +44,7 @@ export default function HomePage() {
           </div>
 
           <div className="hero-stats">
-            544 tests passing &middot; Zero cloud dependencies &middot; Claude Code + Cursor
+            Zero cloud dependencies &middot; Local-first &middot; Claude Code + Cursor
           </div>
 
           <div className="hero-actions">
