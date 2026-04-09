@@ -8,10 +8,22 @@ export default {
     content: 'AIDE Memory © 2026 — Persistent memory for AI coding agents',
   },
   darkMode: true,
+  sidebar: {
+    defaultMenuCollapseLevel: 1,
+    toggleButton: true,
+  },
   useNextSeoProps() {
     return {
       titleTemplate: '%s – AIDE Memory',
     }
+  },
+  navbar: {
+    extraContent: (
+      <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center', fontSize: '0.9rem' }}>
+        <a href="/docs/quick-start" style={{ color: 'inherit', textDecoration: 'none', opacity: 0.8 }}>Quick Start</a>
+        <a href="/docs" style={{ color: 'inherit', textDecoration: 'none', opacity: 0.8 }}>Docs</a>
+      </div>
+    ),
   },
   head: (
     <>
