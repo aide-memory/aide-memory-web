@@ -2,9 +2,10 @@ export default {
   'index': {
     title: 'Home',
     theme: {
-      layout: 'raw',
       sidebar: false,
-      toc: false
+      toc: false,
+      breadcrumb: false,
+      pagination: false
     }
   },
   'docs': 'Documentation'
