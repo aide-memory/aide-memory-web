@@ -166,6 +166,21 @@ The reason text beneath the label tells you what's happening (e.g. "3 memories f
 
 We've asked Anthropic to add a non-alarming label option for intentional blocks. In the meantime, you have several ways to tune the frequency or disable blocks entirely — see the next question.
 
+## How do I tune per-file recall noise / performance?
+
+If AIDE Memory feels too chatty when you open files — especially in large projects with many broad-scoped memories — you have a few dials:
+
+- **`recall.minScopeDepth`** (default `1`) — how specific a scope must be to surface per-file. Bump to `2` to exclude `src/**`-style broad scopes from per-file recall (they still surface at SessionStart). `3+` for strict narrow-scope-only.
+- **`recall.limit`** (default `20`) — max memories per `aide_recall` call. If a file has more matching memories, the agent gets bounded pagination via follow-up `aide_recall({ids: [next-batch]})` calls. Bump if you consistently hit the cap.
+- **`memories.softening.threshold`** (default `10`) — below this total-memory count, hard blocks become soft nudges. Helps small projects not feel hostile.
+- **Scope your memories precisely when storing them.** Writing with scope `src/api/routes/**` is less noisy than `src/**`. Only use broad scopes for genuinely project-wide facts (and consider `priority: "always"` at SessionStart for those instead).
+
+Set any of these with:
+```bash
+npx aide-memory config set recall.minScopeDepth 2
+npx aide-memory config set recall.limit 30
+```
+
 ## How do I reduce or disable hook blocks?
 
 Several config knobs let you shape the block behavior:
