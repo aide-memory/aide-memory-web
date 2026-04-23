@@ -118,10 +118,18 @@ npx aide-memory config get <key>
 
 ### Available settings
 
+Common knobs:
+
 - `embeddings.provider` — `transformers` (default) or `ollama`
-- `embeddings.model` — Model to use (Transformers.js or Ollama)
-- `sqlite.path` — Path to SQLite database (default: `.aide/aide.db`)
-- `hooks.enabled` — Enable/disable hooks globally
+- `embeddings.model` — model to use (Transformers.js or Ollama)
+- `hooks.visible` — show/hide `aide-memory · ...` systemMessage lines in your terminal (default `true`). Flipping to `false` hides the surface without disabling the hooks underneath.
+- `hooks.read.maxBlocks` / `hooks.edit.maxBlocks` — how many times per session pre-read / pre-edit hooks can hard-block (`0` to disable, `1` default)
+- `hooks.search.mode` — `"soft"` (default), `"block"`, or `"off"` for the Grep/Glob nudge
+- `hooks.correction.enabled` — `true`/`false` for UserPromptSubmit correction detection
+- `hooks.precompact.mode` — `"cleanup"` (default) or `"off"`
+- `memories.softening.threshold` — below this total-memory count, hard blocks become soft nudges (default `10`)
+
+See the full config schema in `scripts/hooks/defaults.json` in the aide-memory repo.
 
 ## Using Multiple Editors
 

@@ -142,13 +142,52 @@ This is intentional — nudges respect the agent's judgment. If memories are bei
 
 ## How do I see nudges in the logs?
 
-Enable debug logging:
+AIDE Memory surfaces its own activity as inline `aide-memory · ...` lines in your Claude Code terminal when a hook fires (soft recalls, correction detected, session-start memory injection, Stop checkpoints). This is on by default. To hide these lines:
+
+```bash
+npx aide-memory config set hooks.visible false
+```
+
+Hooks still function (context injection + enforcement unchanged) — only the user-facing lines are suppressed.
+
+For lower-level debug logs (everything the hooks are doing under the hood):
 
 ```bash
 DEBUG=aide:* npx aide-memory list
 ```
 
 Or check your editor's Claude Code extension logs for nudge messages.
+
+## Why do I sometimes see "PreToolUse:Read hook returned blocking error"?
+
+That label is rendered by Claude Code for any intentional hook block — it's **not an AIDE Memory crash**. When AIDE Memory detects scoped memories for a file you're about to read, it asks your agent to call `aide_recall` first so the context is loaded before the read. Claude Code's TUI renders this enforcement with a hardcoded "blocking error" label that hooks cannot customize.
+
+The reason text beneath the label tells you what's happening (e.g. "3 memories for src/foo.ts not yet recalled. Call aide_recall({ids: [10,9,4]})"). AIDE Memory also surfaces an accompanying `aide-memory · prompting aide_recall for scoped memories (expected flow)` line to confirm this is expected behavior.
+
+We've asked Anthropic to add a non-alarming label option for intentional blocks. In the meantime, you have several ways to tune the frequency or disable blocks entirely — see the next question.
+
+## How do I reduce or disable hook blocks?
+
+Several config knobs let you shape the block behavior:
+
+| Setting | Effect | Default |
+|---|---|---|
+| `hooks.visible` | Hide all user-facing `aide-memory · ...` systemMessage lines (hooks still function) | `true` |
+| `hooks.read.maxBlocks` | Max pre-read hard-blocks per file path per session. `0` disables the pre-read hook entirely | `1` |
+| `hooks.edit.maxBlocks` | Same as above for Edit | `1` |
+| `hooks.search.mode` | `"soft"` (nudge only, default), `"block"` (hard block), `"off"` (disabled) | `"soft"` |
+| `hooks.correction.enabled` | Turn UserPromptSubmit correction detection on/off | `true` |
+| `hooks.precompact.mode` | `"cleanup"` (clears tracking on compact) or `"off"` | `"cleanup"` |
+| `memories.softening.threshold` | Below this total-memory count, hard blocks become soft nudges. Small projects stay gentle | `10` |
+
+Set any of these with:
+
+```bash
+npx aide-memory config set hooks.read.maxBlocks 0
+npx aide-memory config set hooks.visible false
+```
+
+Future: `recall.mode: "autoInject"` (Phase 1 follow-up) will let you bypass the hard-block path entirely by having the hook inject memory bodies inline instead of prompting `aide_recall` — no "blocking error" label, no extra tool call. See the [auto-inject recall spec](https://github.com/ahmedmmeky/aide-v0/blob/main/docs/specs/PHASE_1_FOLLOWUP_AUTO_INJECT_RECALL.md) for status.
 
 ## Can I use AIDE Memory without git?
 
