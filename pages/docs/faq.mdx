@@ -12,7 +12,11 @@ Yes. AIDE Memory supports Claude Code and Cursor out of the box. The init comman
 
 ## Does it send data anywhere?
 
-No. Everything is local. Memories are JSON files on your disk. SQLite is a local cache. The MCP server communicates over stdio, not HTTP. Your data never leaves your machine unless you choose to commit it to your git repo.
+Code and memory content never leave your machine. Memories are JSON files on your disk; SQLite is a local cache; the MCP server communicates over stdio, not HTTP.
+
+The one network surface is opt-in PostHog telemetry. When you opt in via `AIDE_TELEMETRY=on`, aide-memory sends anonymized event tallies (event type, a SHA256-hashed `hostname:username` for deduplication, platform, Node version) so we can see which features are used. **What's never sent:** memory content, file paths, code, query strings, or anything user-identifying. **Default is off** — do nothing and no events are transmitted.
+
+`aide-memory stats` (the local-only analytics dashboard) runs against a separate local-SQLite writer and is independent of the PostHog opt-in.
 
 ## How does it compare to claude-mem?
 
@@ -31,13 +35,13 @@ Yes. AIDE Memory supports configurable embedding backends. Use the built-in Tran
 Configure via:
 
 ```bash
-npx aide-memory config set embeddings.provider ollama
-npx aide-memory config set embeddings.model mistral
+npx aide-memory config embeddings.backend ollama
+npx aide-memory config embeddings.model nomic-embed-text
 ```
 
 ## What if I delete .aide/memories/?
 
-The SQLite cache (`aide.db`) rebuilds from the JSON files automatically. The memories are recovered unless you also delete the `.aide/` directory entirely.
+The SQLite cache (`memory.db`) rebuilds from the JSON files automatically. The memories are recovered unless you also delete the `.aide/` directory entirely.
 
 If you delete the entire `.aide/` directory, all memories are lost. Restore from git if you committed them.
 
@@ -83,7 +87,9 @@ If you have specific use cases, file an issue on GitHub.
 
 ## What's the license?
 
-AIDE Memory is licensed under the Functional Source License (FSL), which auto-converts to Apache 2.0 after 2 years. You can use AIDE Memory for free forever.
+aide-memory is **proprietary freeware**. Free for everyone today. The plan: keep core memory features free for solo developers, add more free enhancements over time, and potentially layer paid team/pro features in the future. The source is not public — aide-memory is not open source, not FSL, not Apache 2.0, not MIT. You can use it freely; you cannot recreate, fork, or redistribute it.
+
+See the LICENSE file for the exact terms.
 
 ## How do I report a bug?
 
@@ -103,7 +109,7 @@ Or email support@aide-memory.dev
 
 ## Can I contribute?
 
-Yes! AIDE Memory is open source. Check out the [GitHub repository](https://github.com/aide-memory/aide-memory) for contributing guidelines.
+aide-memory is proprietary freeware — the source is not public, so external pull requests aren't accepted. Bug reports, feature requests, and feedback are very welcome on the issue tracker.
 
 ## How does path scoping work exactly?
 
@@ -145,10 +151,10 @@ This is intentional — nudges respect the agent's judgment. If memories are bei
 AIDE Memory surfaces its own activity as inline `aide-memory · ...` lines in your Claude Code terminal when a hook fires (soft recalls, correction detected, session-start memory injection, Stop checkpoints). This is on by default. To hide these lines:
 
 ```bash
-npx aide-memory config set hooks.visible false
+npx aide-memory config hooks.visible false
 ```
 
-Hooks still function (context injection + enforcement unchanged) — only the user-facing lines are suppressed.
+Hooks still function (context injection + enforcement unchanged); only the user-facing lines are suppressed.
 
 For lower-level debug logs (everything the hooks are doing under the hood):
 
@@ -177,8 +183,8 @@ If AIDE Memory feels too chatty when you open files — especially in large proj
 
 Set any of these with:
 ```bash
-npx aide-memory config set recall.minScopeDepth 2
-npx aide-memory config set recall.limit 30
+npx aide-memory config recall.minScopeDepth 2
+npx aide-memory config recall.limit 30
 ```
 
 ## How do I reduce or disable hook blocks?
@@ -198,8 +204,8 @@ Several config knobs let you shape the block behavior:
 Set any of these with:
 
 ```bash
-npx aide-memory config set hooks.read.maxBlocks 0
-npx aide-memory config set hooks.visible false
+npx aide-memory config hooks.read.maxBlocks 0
+npx aide-memory config hooks.visible false
 ```
 
 Future: `recall.mode: "autoInject"` (Phase 1 follow-up) will let you bypass the hard-block path entirely by having the hook inject memory bodies inline instead of prompting `aide_recall` — no "blocking error" label, no extra tool call. See the [auto-inject recall spec](https://github.com/ahmedmmeky/aide-v0/blob/main/docs/specs/PHASE_1_FOLLOWUP_AUTO_INJECT_RECALL.md) for status.

@@ -29,7 +29,7 @@ export default function HomePage() {
         <div className="hero-grid" />
 
         <div className="hero-content">
-          <div className="hero-badge">Open protocol &middot; Local-first &middot; Zero config</div>
+          <div className="hero-badge">MCP-native &middot; Local-first &middot; Zero config</div>
           <h1 className="hero-title">
             Your agent <span className="hero-highlight">remembers.</span>
           </h1>
@@ -63,7 +63,7 @@ export default function HomePage() {
           <div className="feature-card">
             <div className="feature-icon">&#x1f9e0;</div>
             <h3>Automatic Capture</h3>
-            <p>Four hooks fire at the right moments — corrections, planning decisions, and context are captured without you doing anything.</p>
+            <p>Six hooks fire at the right moments — corrections, planning decisions, and context are captured without you doing anything.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f4cd;</div>
@@ -73,12 +73,12 @@ export default function HomePage() {
           <div className="feature-card">
             <div className="feature-icon">&#x1f504;</div>
             <h3>Cross-Tool</h3>
-            <p>Works with Claude Code, Cursor, and any MCP-compatible client. Teach once, recall everywhere.</p>
+            <p>Works with Claude Code (full hook integration) and Cursor (~80% parity in 0.5.0). Codex, Copilot, and Windsurf get a rules template; full hook adapters land post-0.5.0.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f512;</div>
             <h3>Local-First</h3>
-            <p>SQLite database on your machine. Memory files in your repo. No cloud, no accounts, no data leaving your device.</p>
+            <p>SQLite database on your machine. Memory files in your repo. Code and memory content never leave your machine. Anonymized event tallies are sent to PostHog only when you opt in via <code>AIDE_TELEMETRY=on</code>; default is off.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f4e6;</div>
@@ -88,7 +88,7 @@ export default function HomePage() {
           <div className="feature-card">
             <div className="feature-icon">&#x26a1;</div>
             <h3>20-Token Nudge</h3>
-            <p>No context dumping. A tiny nudge tells the agent memories exist. It decides whether to pull them. Zero wasted tokens.</p>
+            <p>No context dumping. A tiny ~20 token nudge per file read tells the agent memories exist. It decides whether to pull them.</p>
           </div>
         </div>
       </div>

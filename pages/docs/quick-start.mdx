@@ -14,7 +14,7 @@ npx aide-memory init
 
 This command:
 - Creates the `.aide/` directory
-- Installs four hooks (PreToolUse, Stop, UserPromptSubmit, PreCompact)
+- Installs six hooks (SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop, PreCompact)
 - Writes rules files for Claude Code and Cursor
 - Configures the MCP server
 - Zero config required
@@ -95,39 +95,37 @@ npx aide-memory search "test utilities" --scope tests/**
 npx aide-memory forget <memory-id>
 ```
 
-### View memory details
+### Reset everything
+
+To reset memories and config, delete `.aide/` and re-run init:
 
 ```bash
-npx aide-memory show <memory-id>
-```
-
-### Clear all memories
-
-```bash
-npx aide-memory reset
+rm -rf .aide/
+npx aide-memory init
 ```
 
 ## Configuration
 
-Configure AIDE Memory via:
+Configure aide-memory via:
 
 ```bash
-npx aide-memory config set <key> <value>
-npx aide-memory config get <key>
+npx aide-memory config <key>           # read
+npx aide-memory config <key> <value>   # write
 ```
 
 ### Available settings
 
 Common knobs:
 
-- `embeddings.provider` — `transformers` (default) or `ollama`
-- `embeddings.model` — model to use (Transformers.js or Ollama)
+- `embeddings.backend` — `"auto"` (default), `"transformers"`, `"ollama"`, or `"none"`
+- `embeddings.model` — model to use (Transformers.js or Ollama, e.g. `"nomic-embed-text"`)
 - `hooks.visible` — show/hide `aide-memory · ...` systemMessage lines in your terminal (default `true`). Flipping to `false` hides the surface without disabling the hooks underneath.
 - `hooks.read.maxBlocks` / `hooks.edit.maxBlocks` — how many times per session pre-read / pre-edit hooks can hard-block (`0` to disable, `1` default)
-- `hooks.search.mode` — `"soft"` (default), `"block"`, or `"off"` for the Grep/Glob nudge
+- `hooks.search.mode` — `"soft"` (default), `"block"`, or `"off"` for the Grep nudge
 - `hooks.correction.enabled` — `true`/`false` for UserPromptSubmit correction detection
 - `hooks.precompact.mode` — `"cleanup"` (default) or `"off"`
 - `memories.softening.threshold` — below this total-memory count, hard blocks become soft nudges (default `10`)
+- `memories.defaultShared` — default `shared` value for new `preferences` memories. Per-call `shared: true|false` always overrides.
 
 See the full config schema in `scripts/hooks/defaults.json` in the aide-memory repo.
 
@@ -163,16 +161,17 @@ No Docker, no sync service, no authentication. Just git.
 
 ### Memories not being captured
 
-Check that hooks are installed:
+Check that the hook config files exist:
 
 ```bash
-npx aide-memory hooks list
+cat .claude/settings.json   # Claude Code
+cat .cursor/hooks.json      # Cursor
 ```
 
-If hooks are missing, reinstall:
+If hooks are missing or stale, regenerate:
 
 ```bash
-npx aide-memory init
+npx aide-memory init --update-rules
 ```
 
 ### Memory not showing up in next session
@@ -191,10 +190,10 @@ npx aide-memory list --scope src/components/**
 
 ### Full-text search not working
 
-Falls back automatically to LIKE-based search. To rebuild the FTS5 index:
+Falls back automatically to LIKE-based search. To rebuild the SQLite cache (including FTS5) from JSON memory files:
 
 ```bash
-npx aide-memory db rebuild
+npx aide-memory sync import
 ```
 
 ## Next Steps

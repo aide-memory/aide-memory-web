@@ -58,11 +58,11 @@ Each memory is a human-readable JSON file in `.aide/memories/`. Commit them, pus
 ## What You Get
 
 - **7 MCP tools** — aide_recall, aide_remember, aide_update, aide_forget, aide_search, aide_memories, aide_import
-- **11 CLI commands** — recall, remember, update, forget, search, list, stats, config, sync, init, recall-log
-- **4 hooks** — automatic context capture with zero manual effort
+- **13 CLI commands** — recall, remember, update, forget, search, list, stats, recall-log, config, sync, migrate, cleanup, init
+- **6 hooks** — automatic context capture (SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop, PreCompact) with zero manual effort
 - **FTS5 search** — BM25-ranked full-text search across all memories
-- **Cross-editor** — works with Claude Code, Cursor, and any MCP-compatible client
-- **Local-first** — SQLite + JSON files, no cloud, no API keys, no accounts
+- **Cross-editor** — Claude Code (full integration) and Cursor (~80% parity in 0.5.0); Codex, Copilot, and Windsurf get a rules template
+- **Local-first** — SQLite + JSON files; code and memory content never leave your machine. Anonymized event tallies are sent to PostHog only when you opt in via `AIDE_TELEMETRY=on`
 
 ---
 

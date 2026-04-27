@@ -29,11 +29,13 @@ You correct your agent
 
 ### Hooks (Capture Layer)
 
-Four hooks run invisibly at key moments:
+Six hooks run invisibly at key moments:
 
-- **PreToolUse** — Fires before the agent reads any file. Injects nudges about relevant memories.
-- **Stop** — Fires when the agent finishes a task. Extracts final decisions and stores them.
+- **SessionStart** — Fires when a session begins or resumes. Injects top-N preferences + guidelines + priority-always memories.
+- **PreToolUse** — Fires before the agent reads / edits / searches a file or calls an aide_* MCP tool. Injects nudges or hard-blocks until the agent calls aide_recall.
+- **PostToolUse** — Fires after aide_recall / aide_remember / aide_search. Records what was recalled so re-reads don't re-block.
 - **UserPromptSubmit** — Fires when you correct the agent. Captures your feedback as a memory.
+- **Stop** — Fires when the agent finishes a turn. Prompts: "anything worth remembering?"
 - **PreCompact** — Fires before context compaction. Saves planning decisions before they're lost.
 
 ### Memories (.aide/memories/)
@@ -44,19 +46,19 @@ Every memory is a single JSON file, organized by layer:
 .aide/
 ├── memories/
 │   ├── preferences/
-│   │   └── src/components.json
+│   │   ├── personal/        # gitignored
+│   │   └── shared/
 │   ├── technical/
-│   │   └── src/database/**/*.json
 │   ├── area_context/
-│   │   └── src/checkout/**/*.json
 │   └── guidelines/
-│       └── testing-standards.json
-└── aide.db
+├── config.json
+└── cache/
+    └── memory.db
 ```
 
 Memories are files. Files are committed. Git syncs them. No Docker, no vector database service, no API keys.
 
-### SQLite Cache (aide.db)
+### SQLite Cache (memory.db)
 
 Local cache for fast lookup and full-text search (FTS5). Rebuilds automatically from JSON files if deleted. Used for:
 
@@ -68,13 +70,13 @@ Local cache for fast lookup and full-text search (FTS5). Rebuilds automatically 
 
 The MCP server exposes 7 tools for agents:
 
-1. **aide_recall** — Get memories for a path (nudge, not dump)
-2. **aide_remember** — Store a new memory
-3. **aide_list** — List all memories in a scope
-4. **aide_search** — Full-text search with BM25 ranking
-5. **aide_forget** — Delete a memory
-6. **aide_update** — Update existing memory content
-7. **aide_config** — Inspect or modify configuration
+1. **aide_recall** — Path-scoped memory retrieval with glob inheritance
+2. **aide_remember** — Store a new memory (layer + scope + what/why + tags)
+3. **aide_update** — Edit an existing memory's content, scope, or tags
+4. **aide_forget** — Permanently delete a memory
+5. **aide_search** — FTS5 keyword search with BM25 ranking
+6. **aide_memories** — List memories with layer, scope, contributor, tag filters
+7. **aide_import** — Bulk-import from markdown bullet/numbered lists
 
 ## Zero Infrastructure
 

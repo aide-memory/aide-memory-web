@@ -4,12 +4,14 @@
 
 ## 1. Hook-Driven Capture
 
-Four hooks drive 100% adoption — not 0%. Corrections, decisions, and preferences are captured at the moment they happen, not when the agent feels like saving them.
+Six hooks drive 100% adoption — not 0%. Corrections, decisions, and preferences are captured at the moment they happen, not when the agent feels like saving them.
 
 **Hooks:**
-- `PreToolUse` — Before the agent reads any file
-- `Stop` — When the agent finishes a task
+- `SessionStart` — Session begins or resumes (injects top-N preferences + guidelines + priority-always memories)
+- `PreToolUse` — Before the agent reads / edits / searches a file or calls an aide_* MCP tool
+- `PostToolUse` — After aide_recall / aide_remember / aide_search (records what was recalled)
 - `UserPromptSubmit` — When you correct the agent
+- `Stop` — When the agent finishes a turn
 - `PreCompact` — Before context compaction
 
 ---
