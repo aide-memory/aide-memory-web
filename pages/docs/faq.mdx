@@ -20,11 +20,11 @@ The one network surface is opt-in PostHog telemetry. When you opt in via `AIDE_T
 
 ## How does it compare to claude-mem?
 
-claude-mem dumps all memories into the system prompt on every interaction (~2,000 tokens). AIDE Memory sends a 20-token nudge and lets the agent decide relevance.
+[claude-mem](https://github.com/thedotmack/claude-mem) injects context from recent sessions at session start and exposes a 3-layer MCP search workflow (search → timeline → get_observations) for on-demand detail. AIDE Memory takes a different approach: a ~20-token nudge per file read so the agent decides which memories to recall.
 
-claude-mem requires Docker and ChromaDB. AIDE Memory requires only `npx`.
+claude-mem scopes context at folder granularity via auto-generated Folder Context Files (per-project-folder/worktree CLAUDE.md activity timelines). AIDE Memory uses glob-pattern scoping with inheritance (e.g. `src/auth/**`).
 
-claude-mem has a documented 72% summary failure rate and creates files in every directory. AIDE Memory keeps everything in one `.aide/` directory.
+claude-mem installs via `npx claude-mem install` and uses Chroma (vector DB) plus a Bun-managed worker service. AIDE Memory installs via `npx aide-memory@latest init` and stores memories as JSON files plus a local SQLite cache, no extra runtime.
 
 See the [Comparison page](/docs/comparison) for details.
 

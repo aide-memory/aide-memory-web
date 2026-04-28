@@ -1,35 +1,30 @@
 # Comparison
 
-AIDE Memory is built to solve the core problems in existing memory tools.
+AIDE Memory, [claude-mem](https://github.com/thedotmack/claude-mem), and [engram](https://github.com/ayvazyan10/engram) all solve the same core problem — AI agents forget between sessions — but they take meaningfully different approaches. This page describes each tool factually so you can pick the one that matches your workflow.
 
 ## Feature Comparison
 
 | Feature | AIDE Memory | claude-mem | engram |
 |---------|-------------|------------|--------|
-| **Adoption mechanism** | 6 hooks (100% automatic) | System prompt injection | None (0% voluntary) |
-| **Token cost per recall** | ~20 tokens (nudge) | ~2,000 tokens (full dump) | Variable |
-| **Path scoping** | Glob inheritance from day one | Folder Context Files (recent) | None |
-| **Storage** | JSON files + SQLite cache | ChromaDB + SQLite | SQLite |
-| **Infrastructure** | `npx`, nothing else | Docker + ChromaDB + HTTP server | Go binary |
-| **Memory reliability** | 773 tests, 0 controllable failures | 72% summary failure rate | Empty/ghost observations |
-| **File pollution** | One directory: `.aide/` | Creates files in every directory | Clean |
-| **Security** | Local-only, no network | Unauthenticated HTTP API on port 37777 | Windows Defender flags binary |
-| **Git sync** | Native (memories are files) | No | No |
-| **Compaction protection** | PreCompact hook saves decisions | No | No |
-| **Structured layers** | 4 layers (preferences, technical, area_context, guidelines) | Flat | Flat |
+| **Capture mechanism** | Hooks pre-wired across 6 lifecycle events at `aide-memory init` | Session-end summarization that emits the next session's context | Opt-in session-end hook script you copy in and configure |
+| **Recall mechanism** | ~20-token nudge per file read; agent decides which memories to fetch | Inject context from recent sessions at session start; 3-layer MCP search (search → timeline → get_observations) on demand | Namespace-scoped retrieval against typed memory store |
+| **Scoping model** | Glob patterns with inheritance (e.g. `src/auth/**`) inside a project | Folder granularity via auto-generated per-project-folder Folder Context Files | Namespace per project or agent, with opt-in cross-namespace recall |
+| **Memory structure** | 4 layers: preferences, technical, area_context, guidelines | Folder activity timelines + observations | 3 types: Episodic, Semantic (knowledge graph), Procedural |
+| **Storage** | Local JSON files + SQLite cache | Chroma (vector DB) + Bun-managed worker service | Local store (per-namespace) |
+| **Install** | `npx aide-memory@latest init` | `npx claude-mem install` (manages Bun + uv) | npm package |
+| **Git sync** | Native — memories are files in `.aide/`, commit to share with the team | Not the primary distribution model | Not the primary distribution model |
+| **Compaction handling** | PreCompact hook saves planning decisions before context is lost | Session-end summarization | Session-end hook (opt-in) |
 | **License** | Proprietary freeware (free for solo developers) | AGPL-3.0 | MIT |
 | **Price** | Free for solo developers (potential team/pro tiers later) | Free | Free |
 
-## Why AIDE Memory is Different
+## How AIDE Memory's Approach Differs
 
-**Adoption, not availability.** When memory tools are simply available as optional MCP tools, agents use them 0 out of 10 times. AIDE Memory uses hooks to capture memories at the moment they happen — no user intervention required.
+**Per-file nudge instead of session-start dump.** AIDE Memory injects a small (~20 token) nudge when the agent opens a file that has scoped memories, and lets the agent decide whether to call `aide_recall`. Other tools take different approaches — claude-mem injects context from recent sessions at session start and exposes search tools for on-demand detail; engram retrieves from typed namespaced stores. Different tradeoffs: per-file recall is precise but depends on file reads; session-start injection is comprehensive but pays a token cost up front.
 
-**Token efficiency.** Dumping all memories into the system prompt on every interaction costs ~2,000 tokens. AIDE Memory sends a 20-token nudge and lets the agent decide relevance. Over a full day of work, this saves tens of thousands of tokens.
+**Glob-pattern path scoping inside a project.** A memory about test utilities can be scoped to `tests/**` so it surfaces only when the agent is in test code. claude-mem scopes by folder via Folder Context Files (per-folder CLAUDE.md activity timelines). engram scopes by namespace (per project or agent). Same goal — surface relevant context, suppress irrelevant context — at different granularities.
 
-**Path scoping from day one.** A memory about test utilities shouldn't appear when you're working in database code. AIDE Memory uses glob inheritance to surface memories only where they matter.
+**Hooks pre-wired at init.** AIDE Memory configures hooks at six lifecycle events (SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop, PreCompact) the moment you run `aide-memory init`. engram offers an opt-in session-end hook script. claude-mem handles capture through its session lifecycle. If you want capture wired up without manual config, that's the AIDE Memory default.
 
-**Git-native sync.** No Docker. No vector database service. No API keys. Memories are files. Files are committed. Git syncs them. Team members automatically get shared memories via `git pull`.
+**Files as the storage substrate.** Memories live as JSON files inside `.aide/` next to your code, so `git add` / `git commit` / `git pull` is the team-sync path. claude-mem and engram use vector / typed stores instead, which trade the file-level workflow for richer query semantics. Pick the model that matches how your team already works.
 
-**Compaction protection.** Context compaction is documented as a source of lost decisions across 350+ GitHub issues in existing tools. AIDE Memory has a PreCompact hook that extracts planning decisions before they're lost.
-
-**Structured layers.** Preferences, technical facts, area context, and team guidelines are stored separately, so recall can filter by layer and avoid noise.
+**Four typed layers.** preferences (how a contributor likes to work), technical (facts about the stack), area_context (decisions for a code area), guidelines (team principles). engram uses a different axis — Episodic / Semantic / Procedural — which is closer to a cognitive-architecture framing. Both are valid; the right one depends on the kinds of memories you want to capture.
