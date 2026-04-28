@@ -1,0 +1,492 @@
+# Reference: MCP tools + CLI commands
+
+aide-memory exposes the same memory operations through two surfaces:
+
+- **MCP tools** that your AI coding agent (Claude Code, Cursor) calls during a conversation
+- **CLI commands** that you run yourself in the terminal
+
+Both share the same store, so a memory the agent stores via `aide_remember` is the same one you read via `aide-memory list`. This page organizes everything by capability so you can see both forms side-by-side.
+
+## At a glance
+
+| Capability | MCP tool | CLI command |
+|---|---|---|
+| Retrieve scoped memories | `aide_recall` | `aide-memory recall <path>` |
+| Store a memory | `aide_remember` | `aide-memory remember <what> --layer <L>` |
+| Edit a memory | `aide_update` | `aide-memory update <id>` |
+| Delete a memory | `aide_forget` | `aide-memory forget <id>` |
+| Search memories | `aide_search` | `aide-memory search <keyword>` |
+| List memories | `aide_memories` | `aide-memory list` |
+| Bulk import from markdown | `aide_import` | (no CLI; agent-side only) |
+
+CLI-only operations (no MCP equivalent): `init`, `stats`, `recall-log`, `config`, `sync`, `migrate`, `cleanup`. See the [CLI-only operations](#cli-only-operations) section below.
+
+---
+
+## Recall
+
+Retrieve context for an area of the codebase before planning or making changes. Recall is **path-scoped, layered, scope-specificity-ranked, and layer-diversity-balanced**:
+
+- **Path-scoped**: returns memories whose `scope` glob matches at least one of the requested paths, with parent inheritance (querying `src/` returns memories scoped under `src/`).
+- **Layered**: results sort by `area_context` first, then `technical`, then `preferences`, then `guidelines` (per `LAYER_ORDER` in `src/memory/recall.ts`).
+- **Scope-specificity-ranked**: within a layer, scoped memories beat project-wide ones; deeper scopes beat shallower ones.
+- **Layer-diversity-balanced**: when total results are below `recall.layerDiversityMinLimit` (default 5), under-represented layers swap up so each enabled layer is represented.
+- **Bounded-paginated**: capped at `recall.limit` (default 20). If a path has more matches, the remaining IDs come back as `missingIds` on the next pre-read fire so the agent can call `aide_recall({ids: [...]})` for the next batch.
+
+### MCP: `aide_recall`
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `paths` | string[] | no | , | File or directory paths you are working in. Returns memories scoped to these areas plus project-wide context. |
+| `query` | string | no | , | Optional text to boost relevant results (e.g., "skeleton loading"). |
+| `layers` | string[] | no | all | Filter to specific layers: `preferences`, `technical`, `area_context`, `guidelines`. |
+| `contributor` | string | no | , | Filter to a specific contributor. |
+| `limit` | number | no | 20 | Max memories to return. |
+
+```json
+{
+  "tool": "aide_recall",
+  "arguments": {
+    "paths": ["src/components/dashboard/"],
+    "query": "skeleton loading"
+  }
+}
+```
+
+```
+## Area Context
+- Dashboard uses skeleton loading, not spinners (from ahmed) [src/components/dashboard/**]
+  _Why: Decided in sprint 3 planning_
+
+## Technical Context
+- Project uses React 18 with Suspense boundaries
+
+## Guidelines
+- All components must have loading states
+```
+
+When no memories exist:
+```
+No memories found for this area. As you work and make decisions, use aide_remember to store context that should persist.
+```
+
+### CLI: `aide-memory recall <path>`
+
+```bash
+aide-memory recall src/auth/
+```
+
+```
+Recalled 4 memories for "src/auth/":
+
+## Area Context
+  [12] Auth tokens expire after 24 hours, refresh tokens after 30 days [src/auth/**]
+
+## Technical Context
+  [5] Project uses JWT with RS256 signing
+
+## Preferences
+  [8] Prefers explicit error messages over generic "unauthorized" (from ahmed)
+
+## Guidelines
+  [1] All API responses use camelCase keys
+```
+
+**When to use:** Before starting work in a code area, before proposing plans, after context compaction, or when the PreToolUse hook nudges that memories exist.
+
+---
+
+## Remember
+
+Store knowledge that should persist beyond this conversation.
+
+### MCP: `aide_remember`
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `what` | string | yes (or `content`) | , | The specific knowledge to remember. |
+| `content` | string | yes (or `what`) | , | Alias for `what`. Either field is accepted; provided because LLMs frequently reach for `content` first. If both are passed, `what` wins. |
+| `layer` | enum | yes | , | `preferences`, `technical`, `area_context`, or `guidelines`. |
+| `scope` | string | no | project-wide | Glob pattern for the code area (e.g., `src/components/dashboard/**`). |
+| `why` | string | no | , | Context for why this is worth remembering. |
+| `context_label` | string | no | , | Feature grouping label. |
+| `contributor` | string | no | , | Who this knowledge came from. |
+| `tags` | string[] | no | , | Tags for categorization. |
+| `source` | enum | no | `conversation` | How captured: `conversation`, `import`, `agent_discovery`, `elevated`, `hook`. |
+| `shared` | boolean | no | `memories.defaultShared` (default `true`) | Whether the memory is shared (committed to git) or personal (gitignored). Only affects `preferences` layer file placement. |
+| `priority` | enum | no | `normal` | `always` = auto-injected at session start. `normal` = standard recall. |
+
+```json
+{
+  "tool": "aide_remember",
+  "arguments": {
+    "what": "Dashboard uses skeleton loading, not spinners",
+    "layer": "area_context",
+    "scope": "src/components/dashboard/**",
+    "why": "Decided in sprint 3 planning",
+    "contributor": "ahmed"
+  }
+}
+```
+
+```
+Stored: "Dashboard uses skeleton loading, not spinners" as area_context [src/components/dashboard/**] (id: 12, uuid: a1b2c3d4-...)
+```
+
+### CLI: `aide-memory remember <what> --layer <L>`
+
+```bash
+# Project-wide guideline
+aide-memory remember "All API responses use camelCase keys" --layer guidelines
+
+# Scoped technical fact
+aide-memory remember "SQLite WAL mode required for concurrent access" \
+  --layer technical \
+  --scope "src/db/**" \
+  --why "Without WAL, concurrent reads block writes"
+
+# Preference with explicit contributor
+aide-memory remember "Prefers composition over inheritance" \
+  --layer preferences \
+  --contributor "ahmed"
+```
+
+```
+Stored memory (id: 3):
+  Layer: technical
+  What:  SQLite WAL mode required for concurrent access
+  Scope: src/db/**
+  Why:   Without WAL, concurrent reads block writes
+```
+
+| Flag | Default | Description |
+|---|---|---|
+| `--layer` | required | `preferences`, `technical`, `area_context`, `guidelines` |
+| `--scope` | project-wide | Glob pattern |
+| `--tags` | , | Comma-separated tags |
+| `--why` | , | Reason this is worth remembering |
+| `--contributor` | git user.name | Who this came from |
+
+**When to use:** After corrections, decisions, non-obvious discoveries, or when the Stop / UserPromptSubmit hook prompts.
+
+---
+
+## Update
+
+Update an existing memory's content, scope, or context.
+
+### MCP: `aide_update`
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | number | yes | ID of the memory to update. |
+| `what` | string | no | Updated knowledge text. |
+| `content` | string | no | Alias for `what`. If both are passed, `what` wins. |
+| `why` | string | no | Updated context. |
+| `scope` | string | no | Updated scope pattern. |
+| `context_label` | string | no | Updated feature label. |
+| `priority` | enum | no | Update priority: `always` or `normal`. |
+
+```json
+{
+  "tool": "aide_update",
+  "arguments": {
+    "id": 12,
+    "what": "Dashboard uses skeleton loading with 200ms delay threshold",
+    "scope": "src/components/dashboard/**"
+  }
+}
+```
+
+### CLI: `aide-memory update <id>`
+
+```bash
+aide-memory update 3 --what "SQLite WAL mode is mandatory" --scope "src/memory/**"
+```
+
+```
+Updated memory (id: 3):
+  Layer: technical
+  What:  SQLite WAL mode is mandatory
+  Scope: src/memory/**
+```
+
+| Flag | Description |
+|---|---|
+| `--what` | New content |
+| `--why` | New reason |
+| `--scope` | New scope |
+| `--tags` | New tags |
+
+**Errors:** `Memory 99 not found.` / `No changes specified. Use --what, --why, --scope, or --tags.`
+
+**When to use:** When a convention has evolved, code has moved (scope change), or context needs correction.
+
+---
+
+## Forget
+
+Permanently delete a memory. There is no archive mode; deletion is final.
+
+### MCP: `aide_forget`
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | number | yes | The memory ID to delete. |
+
+```json
+{ "tool": "aide_forget", "arguments": { "id": 12 } }
+```
+
+### CLI: `aide-memory forget <id>`
+
+```bash
+aide-memory forget 3
+```
+
+```
+Deleted memory 3: "SQLite WAL mode is mandatory"
+```
+
+**When to use:** Information is wrong, decision was reversed, or a duplicate exists.
+
+---
+
+## Search
+
+Search memories by keyword. Uses FTS5 BM25 ranking when available, falls back to case-insensitive substring matching on `what` / `why`. With an embedding backend installed, semantic search supplements keyword matches when fewer than 3 keyword hits are found.
+
+### MCP: `aide_search`
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `keyword` | string | yes | , | Text to search for (case-insensitive). |
+| `layer` | enum | no | all | Filter to a specific layer. |
+| `limit` | number | no | 50 | Max results. |
+
+```json
+{
+  "tool": "aide_search",
+  "arguments": { "keyword": "authentication", "layer": "technical" }
+}
+```
+
+```
+Found 2 matching "authentication":
+
+## Technical Context
+- [5] Project uses JWT with RS256 signing
+  _Why: Required by security audit_
+- [14] Auth middleware validates tokens on every request [src/middleware/**]
+```
+
+### CLI: `aide-memory search <query>`
+
+```bash
+aide-memory search "authentication"
+aide-memory search "testing" --layer guidelines --limit 10
+```
+
+| Flag | Default | Description |
+|---|---|---|
+| `--layer` | all | Filter by layer |
+| `--limit` | 50 | Max results |
+
+**When to use:** Concept-level lookups ("where do we handle auth tokens?", "any memories about the payment flow?"). Often a better first stop than `recall` when you're not pinning a specific path.
+
+---
+
+## List
+
+List stored memories for transparency and management.
+
+### MCP: `aide_memories`
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `layer` | enum | no | all | Filter by layer. |
+| `scope` | string | no | all | Filter by exact scope. |
+| `contributor` | string | no | all | Filter by contributor. |
+| `limit` | number | no | 50 | Max results. |
+
+```json
+{ "tool": "aide_memories", "arguments": { "layer": "preferences", "contributor": "ahmed" } }
+```
+
+```
+Showing 3 of 45 memories:
+
+[8] preferences | Prefers composition over inheritance (ahmed) | recalled 5x
+[9] preferences | Always use named exports, never default exports (ahmed) [src/**] | recalled 3x
+[15] preferences | Prefers explicit error messages over generic ones (ahmed) | recalled 1x
+```
+
+### CLI: `aide-memory list`
+
+```bash
+aide-memory list                                   # all
+aide-memory list --layer preferences
+aide-memory list --contributor ahmed
+aide-memory list --layer area_context --scope "src/auth/**"
+```
+
+| Flag | Default | Description |
+|---|---|---|
+| `--layer` | all | Filter by layer |
+| `--scope` | all | Filter by exact scope |
+| `--contributor` | all | Filter by contributor |
+| `--limit` | all | Max results |
+| `--tag` | all | Filter by tag |
+
+---
+
+## Import
+
+Import guidelines or technical context from a markdown document. Each bullet point, numbered item, or paragraph (>20 chars) becomes a separate memory.
+
+### MCP: `aide_import`
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `content` | string | yes | , | The markdown content to import. |
+| `layer` | enum | yes | , | Which layer to import into. |
+| `scope` | string | no | project-wide | Scope for all imported memories. |
+| `context_label` | string | no | , | Label for the import batch. |
+
+```json
+{
+  "tool": "aide_import",
+  "arguments": {
+    "content": "# Testing Guidelines\n- Always mock external API calls\n- Use factories for test data, never raw objects\n- Integration tests go in __tests__/integration/",
+    "layer": "guidelines",
+    "context_label": "testing guidelines"
+  }
+}
+```
+
+```
+Imported 3 memories as guidelines:
+- [20] Always mock external API calls
+- [21] Use factories for test data, never raw objects
+- [22] Integration tests go in __tests__/integration/
+```
+
+**When to use:** Seed knowledge from existing docs (`TESTING_GUIDELINES.md`, `ARCHITECTURE.md`, `CONTRIBUTING.md`). Headings, code blocks, and table rows are skipped; only bullet points, numbered items, and paragraphs are imported.
+
+---
+
+## CLI-only operations
+
+These have no MCP equivalent; they're for you, not the agent.
+
+### `aide-memory init`
+
+Initialize a new `.aide/` project directory.
+
+```bash
+aide-memory init                # standard
+aide-memory init --update-rules # refresh rules files only (idempotent)
+aide-memory init --force        # overwrite existing files
+```
+
+Creates `.aide/`, six hooks, MCP config, rules files for both editors, `.aide/config.json` seeded with every public setting, `.aide/config-reference.md`. Adds `.gitignore` entries for `.aide/cache/` and `.aide/memories/preferences/personal/`.
+
+### `aide-memory stats`
+
+Show memory analytics summary.
+
+```bash
+aide-memory stats
+```
+
+```
+Memory Statistics
+
+  Total memories: 45
+
+  By Layer:
+    Preferences: 8
+    Technical Context: 15
+    Area Context: 18
+    Guidelines: 4
+
+  Most Recalled:
+    [5] Project uses JWT with RS256 signing (12x)
+    [1] API responses must use camelCase keys (8x)
+
+  By Source:
+    conversation: 20
+    hook: 12
+    agent_discovery: 8
+    import: 5
+```
+
+### `aide-memory recall-log`
+
+Tail the recall-log to see recent recall events. Useful for debugging what the agent fetched and when.
+
+```bash
+aide-memory recall-log --limit 50
+aide-memory recall-log --since 2026-04-28T00:00:00Z
+```
+
+```
+[2026-04-27T14:21:08Z] aide_recall paths=[src/api/routes.ts] returned 4 memories
+[2026-04-27T14:21:53Z] aide_recall paths=[src/auth/middleware.ts] returned 7 memories
+[2026-04-27T14:22:11Z] aide_search keyword="token" returned 3 memories
+```
+
+### `aide-memory config <key> [value]`
+
+Read or write configuration. Per-project (`<project>/.aide/config.json`).
+
+```bash
+# Read
+aide-memory config memories.defaultShared       # → true
+aide-memory config recall.minScopeDepth         # → 1
+aide-memory config tags.presets                 # → ["architecture",...]
+
+# Write
+aide-memory config memories.defaultShared false
+aide-memory config hooks.read.maxBlocks 0
+aide-memory config hooks.stop.schedule '[{"every":5}]'
+aide-memory config contributor "TeamBot"
+```
+
+Or edit `.aide/config.json` directly; the JSON file is the source of truth. Hooks re-read it on every fire so changes propagate without restarting anything.
+
+For the full key reference and visualized walkthroughs, see [Configuration](/docs/configuration).
+
+### `aide-memory sync import` / `aide-memory sync export`
+
+Reconcile JSON files and the SQLite cache.
+
+```bash
+aide-memory sync import     # JSON → SQLite (rebuild cache)
+aide-memory sync export     # SQLite → JSON (fill gaps)
+```
+
+Conflicts (local SQLite has newer data than the JSON file) resolve by `updated_at` timestamp; newer wins. The post-checkout git hook runs `sync import` automatically after `git pull` or branch switch.
+
+### `aide-memory migrate`
+
+Migrate from the legacy `memory.db` format. **Status:** placeholder for the future migration from the old single-database format. Not yet implemented.
+
+### `aide-memory cleanup`
+
+Remove stale session tracking files from `.aide/cache/`. Each session creates small tracking files (`recalled-paths-{session_id}.txt`, `searched-queries-*`, `correction-pending-*`); these are normally cleared by PreCompact and SessionStart, but crashed sessions leave orphans.
+
+```bash
+aide-memory cleanup                      # >7 days old (default)
+aide-memory cleanup --older-than 24h
+aide-memory cleanup --dry-run
+aide-memory cleanup --all                # all tracking files regardless of age
+```
+
+| Option | Description |
+|---|---|
+| `--older-than <duration>` | TTL threshold (`7d`, `24h`, `30m`, `60s`). Default `7d`. |
+| `--all` | Remove all tracking files. May affect concurrent sessions. |
+| `--dry-run` | Preview without deleting. |
+
+Removing an active session's tracking file is not destructive; the session re-blocks on the next read and re-populates tracking via `aide_recall`. No memory data is lost.

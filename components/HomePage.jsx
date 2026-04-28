@@ -47,7 +47,7 @@ export default function HomePage() {
         <div className="hero-grid" />
 
         <div className="hero-content">
-          <div className="hero-badge">MCP-native &middot; Local-first &middot; Git-synced for teams</div>
+          <div className="hero-badge">Auto-captured &amp; recalled &middot; Path-scoped &middot; Team-synced &middot; Cross-tool</div>
           <h1 className="hero-title">
             Your agent <span className="hero-highlight">remembers.</span>
             <br />
@@ -142,7 +142,7 @@ export default function HomePage() {
           <div className="feature-card">
             <div className="feature-icon">&#x1f512;</div>
             <h3>Local-first, opt-in telemetry</h3>
-            <p>Memories live as JSON files in your repo plus a local SQLite cache. Code and memory content never leave your machine. Telemetry (anonymized event counts only, never content) is opt-in via <code>AIDE_TELEMETRY=on</code>.</p>
+            <p>Memories live as JSON files in your repo plus a local SQLite cache. Code and memory content never leave your machine. Telemetry (anonymized event counts only, never content) requires you to opt in via <code>AIDE_TELEMETRY=on</code>; until you do, nothing is sent.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f4b0;</div>

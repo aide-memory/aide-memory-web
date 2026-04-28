@@ -37,7 +37,7 @@ The CLI walks up from the current directory looking for `.aide/`. If your projec
    ```
    Value `0` / `false` means that hook is disabled.
 
-2. **MCP server not configured in your editor.** Ensure the MCP server is registered. For Claude Code, check `.mcp.json`. For Cursor, check `.cursor/mcp.json` and that the server is toggled ON in Cursor → Settings → MCP.
+2. **MCP server not configured in your editor.** Ensure the MCP server is registered. For Claude Code, check `.mcp.json` exists and **restart your Claude Code session** so the new MCP config is loaded (Claude Code reads `.mcp.json` once at session start). For Cursor, check `.cursor/mcp.json` exists, **restart Cursor** (Cmd+Q the app), and toggle the aide-memory MCP server ON in **Settings → MCP** (Cursor disables newly-discovered servers by default).
 
 3. **Rules file missing or outdated.** Regenerate:
    ```bash
@@ -109,21 +109,22 @@ aide-memory sync import
 
 ---
 
-## Cursor integration issues
+## Editor integration issues
 
-1. **Restart Cursor after `aide-memory init`.** Cursor reads `.cursor/mcp.json` on startup only; there is no hot-reload. Cmd+Q the Cursor app (don't just close the window) and reopen.
+**Claude Code:**
 
-2. **Toggle the aide-memory MCP server ON.** Cursor → Settings → MCP. Newly-discovered servers stay disabled by default.
+1. **Restart your Claude Code session after `aide-memory init`.** Claude Code reads `.mcp.json` once at session start; new MCP servers don't appear in an in-flight session.
+2. **Check `.claude/settings.json` exists** and lists aide-memory hooks for SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop, PreCompact. If missing or stale: `aide-memory init --force` to re-install.
+3. **Check `.claude/rules/aide-memory.md` exists** with the agent instructions. If missing: `aide-memory init --update-rules`.
 
-3. **Check rules file exists:**
-   ```bash
-   cat .cursor/rules/aide-memory.mdc
-   ```
-   If missing, regenerate: `aide-memory init --update-rules`.
+**Cursor:**
 
-4. **Cursor uses different hook delivery.** Cursor uses `agent_message` for soft hook responses rather than `additionalContext`. The rules file template accounts for this.
+1. **Cmd+Q the Cursor app** (don't just close the window) and reopen. Cursor reads `.cursor/mcp.json` on startup only; there is no hot-reload.
+2. **Toggle the aide-memory MCP server ON** in Cursor → Settings → MCP. Newly-discovered servers stay disabled by default.
+3. **Check `.cursor/rules/aide-memory.mdc` exists** with `alwaysApply: true` in the frontmatter. If missing or stale: `aide-memory init --update-rules`.
+4. **Cursor delivers hook responses on different channels** (`agent_message` for soft, `permission: "deny"` for hard-block, `followup_message` for Stop). The rules file template handles this; you don't need to do anything specific.
 
-See [Cursor editor page](/docs/editors/cursor) for the full gap list and Cursor-specific tracking.
+See the [Cursor editor page](/docs/editors/cursor) for the full UX walkthrough and the [Claude Code editor page](/docs/editors/claude-code) for the reference setup.
 
 ---
 

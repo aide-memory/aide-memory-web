@@ -224,13 +224,13 @@ aide-memory config embeddings.backend none
 
 `@huggingface/transformers` is in `optionalDependencies`; `npm install -g aide-memory` will attempt to install it (npm continues if it fails). Without either backend available, search uses FTS5 keyword (BM25 ranking) with a LIKE fallback.
 
-## Telemetry (opt-in)
+## Telemetry (opt-in: nothing sent unless you turn it on)
 
 aide-memory has two distinct analytics surfaces. Don't conflate them.
 
-**1. Local SQLite analytics (always on, never transmitted).** Tool-call counts and recall events are written to your local SQLite cache at `~/.aide/projects/<hash>/memory.db`. This drives `aide-memory stats`. Purely local; nothing leaves your machine.
+**1. Local SQLite analytics (always on, never transmitted).** Tool-call counts and recall events are written to your local SQLite cache at `~/.aide/projects/<hash>/memory.db`. This drives `aide-memory stats`. Purely local; nothing leaves your machine. There is no remote endpoint involved.
 
-**2. Anonymized event tallies to PostHog (opt-in via env var).** When you opt in by exporting `AIDE_TELEMETRY=on`, aide-memory sends anonymized event tallies so we can see which features are used. **Off by default.**
+**2. Anonymized event tallies to PostHog (opt-in via env var).** Out of the box, **no events are sent**. Until you set `AIDE_TELEMETRY=on` in your environment, aide-memory makes zero network calls for telemetry. When you do opt in, aide-memory sends anonymized event tallies (just counts, no content) so we can see which features are used.
 
 **What's sent when opted in:**
 - Event type (`remember`, `recall`, `search`, etc.)
@@ -245,7 +245,7 @@ aide-memory has two distinct analytics surfaces. Don't conflate them.
 export AIDE_TELEMETRY=on
 ```
 
-**Stay opted out (default):** do nothing.
+**Stay opted out (the default):** do nothing. Without `AIDE_TELEMETRY=on`, aide-memory never makes a telemetry network call.
 
 The PostHog write key is bundled into the published package, which is industry-standard practice for client-side analytics SDKs (Sentry, Mixpanel, PostHog itself all do this). Write keys identify a project; they don't authorize sensitive operations. They're safe to ship.
 

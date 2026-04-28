@@ -4,42 +4,52 @@ import { Callout } from 'nextra/components'
 
 ## Is it free?
 
-Yes. All individual memory features are free with no limits. No usage caps, no memory count limits, no feature gates for solo developers.
+Yes. aide-memory is **proprietary freeware**: free to use today, no usage caps, no memory count limits, no feature gates for solo developers. The plan is to keep core memory features free for solo developers, add more free enhancements over time, and potentially layer paid team / pro features in the future. Source is not public; aide-memory is not open source, not FSL, not Apache 2.0, not MIT.
 
 ## Does it work with Cursor?
 
-Yes. AIDE Memory supports Claude Code and Cursor out of the box. The init command writes rules files for both editors and configures the MCP server. Same memories work across both tools.
+Yes. aide-memory ships with full hook + MCP wiring for both Claude Code and Cursor. The `init` command writes rules files for both editors and configures the MCP server. The same `.aide/memories/` directory is read by both tools. Memories captured in Claude Code are available in Cursor immediately, and vice versa.
+
+After `init`, **restart your editor** so it picks up the new MCP server (both editors read MCP config at session start, not live). On Cursor, also enable the aide-memory MCP server in **Settings → MCP** since Cursor disables newly-discovered MCP servers by default.
+
+## Is it good for teams?
+
+Yes, that's a first-class story. Memories are JSON files under `.aide/memories/`. Commit them, push them, your teammates pull them. The `post-checkout` git hook on their machine rebuilds their local SQLite cache after `git pull` so their agent sees the same context yours does, on the next file read in the relevant area.
+
+Personal preferences live under `.aide/memories/preferences/personal/` and are gitignored, so personal style stays personal. The other three layers (technical, area_context, guidelines) and shared preferences travel with the repo.
 
 ## Does it send data anywhere?
 
-Code and memory content never leave your machine. Memories are JSON files on your disk; SQLite is a local cache; the MCP server communicates over stdio, not HTTP.
+No, unless you opt in.
 
-The one network surface is opt-in PostHog telemetry. When you opt in via `AIDE_TELEMETRY=on`, aide-memory sends anonymized event tallies (event type, a SHA256-hashed `hostname:username` for deduplication, platform, Node version) so we can see which features are used. **What's never sent:** memory content, file paths, code, query strings, or anything user-identifying. **Default is off**, do nothing and no events are transmitted.
+Code and memory content **never** leave your machine. Memories are JSON files on your disk; SQLite is a local cache; the MCP server communicates over stdio, not HTTP.
+
+The one network surface is opt-in PostHog telemetry. Until you set `AIDE_TELEMETRY=on` in your environment, aide-memory makes **zero telemetry network calls**. When you do opt in, only anonymized event tallies are sent (event type, a SHA256-hashed `hostname:username` for deduplication, platform, Node version). Memory content, code, file paths, query strings, and any other user-identifying data are never sent.
 
 `aide-memory stats` (the local-only analytics dashboard) runs against a separate local-SQLite writer and is independent of the PostHog opt-in.
 
 ## How does it compare to claude-mem?
 
-[claude-mem](https://github.com/thedotmack/claude-mem) injects context from recent sessions at session start and exposes a 3-layer MCP search workflow (search → timeline → get_observations) for on-demand detail. AIDE Memory takes a different approach: a ~20-token nudge per file read so the agent decides which memories to recall.
+[claude-mem](https://github.com/thedotmack/claude-mem) injects context from recent sessions at session start and exposes a 3-layer MCP search workflow (search → timeline → get_observations) for on-demand detail. aide-memory takes a different approach: a small (~20-token) nudge per file read so the agent decides which memories to recall.
 
-claude-mem scopes context at folder granularity via auto-generated Folder Context Files (per-project-folder/worktree CLAUDE.md activity timelines). AIDE Memory uses glob-pattern scoping with inheritance (e.g. `src/auth/**`).
+claude-mem scopes context at folder granularity via auto-generated Folder Context Files (per-project-folder/worktree CLAUDE.md activity timelines). aide-memory uses glob-pattern scoping with inheritance (e.g. `src/auth/**`).
 
-claude-mem installs via `npx claude-mem install` and uses Chroma (vector DB) plus a Bun-managed worker service. AIDE Memory installs via `npx aide-memory@latest init` and stores memories as JSON files plus a local SQLite cache, no extra runtime.
+claude-mem installs via `npx claude-mem install` and uses Chroma (vector DB) plus a Bun-managed worker service. aide-memory installs via `npx aide-memory init` and stores memories as JSON files plus a local SQLite cache, no extra runtime.
 
-See the [Comparison page](/docs/comparison) for details.
+See the [Comparison page](/docs/comparison) for the full table.
 
 ## Can I use my own embedding model?
 
-Yes. AIDE Memory supports configurable embedding backends. Use the built-in Transformers.js pipeline for zero-setup local embeddings, or connect Ollama for a model you are already running.
-
-Configure via:
+Yes. aide-memory supports configurable embedding backends. Use the bundled Transformers.js pipeline for zero-setup local embeddings, or connect Ollama for a model you're already running.
 
 ```bash
 npx aide-memory config embeddings.backend ollama
 npx aide-memory config embeddings.model nomic-embed-text
 ```
 
-## What if I delete .aide/memories/?
+`@huggingface/transformers` is in `optionalDependencies`; `npm install -g aide-memory` will attempt to install it (npm continues if it fails). Without either backend, aide-memory falls back to FTS5 keyword (BM25 ranking) with a LIKE fallback, which works well for most use cases.
+
+## What if I delete `.aide/memories/`?
 
 The SQLite cache (`memory.db`) rebuilds from the JSON files automatically. The memories are recovered unless you also delete the `.aide/` directory entirely.
 
@@ -47,7 +57,7 @@ If you delete the entire `.aide/` directory, all memories are lost. Restore from
 
 ## How much disk space do memories use?
 
-Memories are small, each is a single JSON file (~1-5 KB). Even with thousands of memories, the entire `.aide/` directory is typically under 50 MB.
+Memories are small: each is a single JSON file, typically 1-5 KB. Even with thousands of memories, the entire `.aide/` directory is usually under 50 MB.
 
 ## Can I share memories across projects?
 
@@ -55,10 +65,10 @@ Memories are scoped to a path within a project. To reuse a memory pattern in ano
 
 ```bash
 # From project A
-cat .aide/memories/preferences/src/components/patterns.json
+cat .aide/memories/preferences/shared/<uuid>.json
 
 # Copy to project B
-cp .aide/memories/preferences/src/components/patterns.json ../other-project/.aide/memories/preferences/src/
+cp .aide/memories/preferences/shared/<uuid>.json ../other-project/.aide/memories/preferences/shared/
 ```
 
 Or commit to a shared git repo and pull in other projects.
@@ -68,28 +78,33 @@ Or commit to a shared git repo and pull in other projects.
 Git handles merges. If both edits are to the same memory file, you'll get a merge conflict. Resolve it manually:
 
 ```bash
-# After git pull with conflicts
 git status
-# Edit the conflicted .aide/memories/<layer>/... file
+# Edit the conflicted .aide/memories/<layer>/<uuid>.json file
 git add .
 git commit -m "Resolve memory conflict"
 ```
 
-## Does AIDE Memory work offline?
+aide-memory's sync logic resolves cache vs file disagreements by `updated_at` timestamp (newer wins), but for git merges, the file-level conflict is yours to resolve like any other text file.
+
+## Does aide-memory work offline?
 
 Yes. Everything runs locally. No API calls, no cloud services, no authentication. Works offline from day one.
 
 ## Can I migrate from claude-mem or engram?
 
-AIDE Memory uses a different storage format (JSON files vs. ChromaDB/SQLite). Manual migration is not yet supported. We recommend starting fresh with AIDE Memory in your project.
+aide-memory uses a different storage format (JSON files vs vector DB / typed stores). Manual migration is not yet supported. We recommend starting fresh with aide-memory in your project.
 
 If you have specific use cases, file an issue on GitHub.
 
-## What's the license?
+## Does aide-memory replace CLAUDE.md / .cursorrules / skills?
 
-aide-memory is **proprietary freeware**. Free for everyone today. The plan: keep core memory features free for solo developers, add more free enhancements over time, and potentially layer paid team/pro features in the future. The source is not public, aide-memory is not open source, not FSL, not Apache 2.0, not MIT. You can use it freely; you cannot recreate, fork, or redistribute it.
+No. aide-memory complements them. CLAUDE.md and .cursorrules sit at the editor-config layer for static, project-wide guidance. aide-memory adds **dynamic, scoped, layered, auto-captured** memory on top. Both coexist. The `init` command writes its own rules files (`.claude/rules/aide-memory.md` and `.cursor/rules/aide-memory.mdc`) that teach the agent when to call each MCP tool; your existing rules files keep doing their job.
 
-See the LICENSE file for the exact terms.
+Skills / sub-agents likewise still trigger as configured. aide-memory just adds the persistent typed memory store underneath.
+
+## Does aide-memory cost extra inference money?
+
+No. aide-memory is a typed store + dispatcher + MCP server. It does **no LLM calls of its own**. The agent in the editor you already use does all the reasoning, no extra inference cost. The seven MCP tool descriptors fit comfortably in any agent's tool budget.
 
 ## How do I report a bug?
 
@@ -97,7 +112,7 @@ Open an issue on GitHub: https://github.com/aide-memory/aide-memory/issues
 
 Include:
 - Your Node version (`node --version`)
-- AIDE Memory version (`npx aide-memory --version`)
+- aide-memory version (`npx aide-memory --version`)
 - Steps to reproduce
 - Error output
 
@@ -105,50 +120,73 @@ Include:
 
 Open a discussion on GitHub: https://github.com/aide-memory/aide-memory/discussions
 
-Or email support@aide-memory.dev
-
 ## Can I contribute?
 
-aide-memory is proprietary freeware, the source is not public, so external pull requests aren't accepted. Bug reports, feature requests, and feedback are very welcome on the issue tracker.
+aide-memory is proprietary freeware; the source is not public, so external pull requests aren't accepted. Bug reports, feature requests, and feedback are very welcome on the issue tracker.
 
 ## How does path scoping work exactly?
 
-Path scoping uses glob patterns with inheritance:
+Path scoping uses glob patterns with **parent inheritance**:
 
 - A memory for `src/**` applies everywhere under `src/`
 - A memory for `src/components/**` applies only under `src/components/`
-- More specific scopes take precedence when multiple memories match
+- More specific scopes rank higher when multiple memories match
+- Querying `src/` returns memories scoped under `src/` (parent inheritance)
 
-When the agent opens a file, AIDE Memory calculates which memories are relevant by matching the file path against all glob patterns.
+When the agent opens a file, aide-memory matches the file path against all stored scope globs and returns the matching memories ranked by **scope match → layer priority (`area_context` > `technical` > `preferences` > `guidelines`) → scope specificity**.
 
-## Can I use AIDE Memory in a monorepo?
+`recall.minScopeDepth` tunes how specific a scope must be to surface on per-file recall. Default `1` (permissive) lets every scoped memory surface per-file. Bump to `2` or `3` for stricter scoping when you have many broad scopes; broad scopes still surface at SessionStart, just not on every file read.
 
-Yes. Each package can have its own `.aide/` directory:
+## Can I use aide-memory in a monorepo?
 
+Yes. Two patterns work:
+
+**Single root `.aide/`:**
 ```
 monorepo/
-├── packages/
-│   ├── frontend/
-│   │   └── .aide/
-│   └── backend/
-│       └── .aide/
+├── .aide/                       ← shared across all packages
+└── packages/
+    ├── frontend/
+    └── backend/
 ```
+Use scoped memories like `packages/frontend/**` and `packages/backend/**` to keep recall narrow.
 
-Or share a single `.aide/` at the root with path scoping to keep memories separate.
+**Per-package `.aide/`:**
+```
+monorepo/
+└── packages/
+    ├── frontend/
+    │   └── .aide/
+    └── backend/
+        └── .aide/
+```
+Each package's memories stay isolated. Run `aide-memory init` in each package directory.
+
+The first pattern is recommended unless you genuinely want hard isolation between packages.
 
 ## What if the agent doesn't call aide_recall?
 
-The agent gets a nudge in the system message, but isn't forced to call the tool. If the agent decides the memory isn't relevant, it skips the recall.
+The agent gets a nudge in the system message but isn't forced to call the tool. If the agent decides the memory isn't relevant, it skips the recall.
 
-This is intentional, nudges respect the agent's judgment. If memories are being ignored, check:
+This is intentional: nudges respect the agent's judgment. If memories are being ignored, check:
 
-1. Is the memory path scope correct?
+1. Is the memory's path scope correct?
 2. Is the memory description clear?
 3. Is the nudge actually showing up in the logs?
 
+You can also flip pre-read mode to a stronger gate:
+
+```bash
+# Already the default for first read of each file:
+aide-memory config hooks.read.maxBlocks 1
+
+# Disable the read hook entirely (no block, no soft nudge):
+aide-memory config hooks.read.maxBlocks 0
+```
+
 ## How do I see nudges in the logs?
 
-AIDE Memory surfaces its own activity as inline `aide-memory · ...` lines in your Claude Code terminal when a hook fires (soft recalls, correction detected, session-start memory injection, Stop checkpoints). This is on by default. To hide these lines:
+aide-memory surfaces its own activity as inline `aide-memory · ...` lines in your terminal when a hook fires (soft recalls, correction detected, session-start memory injection, Stop checkpoints). Default on. To hide:
 
 ```bash
 npx aide-memory config hooks.visible false
@@ -156,32 +194,31 @@ npx aide-memory config hooks.visible false
 
 Hooks still function (context injection + enforcement unchanged); only the user-facing lines are suppressed.
 
-For lower-level debug logs (everything the hooks are doing under the hood):
+For lower-level debug logs:
 
 ```bash
 DEBUG=aide:* npx aide-memory list
 ```
 
-Or check your editor's Claude Code extension logs for nudge messages.
+Or check your editor's Claude Code / Cursor extension logs.
 
 ## Why do I sometimes see "PreToolUse:Read hook returned blocking error"?
 
-That label is rendered by Claude Code for any intentional hook block, it's **not an AIDE Memory crash**. When AIDE Memory detects scoped memories for a file you're about to read, it asks your agent to call `aide_recall` first so the context is loaded before the read. Claude Code's TUI renders this enforcement with a hardcoded "blocking error" label that hooks cannot customize.
+That label is rendered by Claude Code for any intentional hook block; it's **not an aide-memory crash**. When aide-memory detects scoped memories for a file you're about to read, it asks your agent to call `aide_recall` first so the context is loaded before the read. Claude Code's TUI renders this enforcement with a hardcoded "blocking error" label that hooks cannot customize.
 
-The reason text beneath the label tells you what's happening (e.g. `3 memories for src/foo.ts not yet recalled. Call aide_recall({ids: [10,9,4]})`). AIDE Memory also surfaces an accompanying `aide-memory · prompting aide_recall for scoped memories (expected flow)` line to confirm this is expected behavior.
+The reason text beneath the label tells you what's happening (e.g. `3 memories for src/foo.ts not yet recalled. Call aide_recall`). aide-memory also surfaces an accompanying `aide-memory · prompting aide_recall for scoped memories (expected flow)` line to confirm this is expected behavior.
 
-We've asked Anthropic to add a non-alarming label option for intentional blocks. In the meantime, you have several ways to tune the frequency or disable blocks entirely, see the next question.
+We've asked Anthropic to add a non-alarming label option for intentional blocks. In the meantime, you have several ways to tune the frequency or disable blocks entirely; see the next question.
 
 ## How do I tune per-file recall noise / performance?
 
-If AIDE Memory feels too chatty when you open files, especially in large projects with many broad-scoped memories, you have a few dials:
+If aide-memory feels too chatty when you open files (especially in large projects with many broad-scoped memories), you have a few dials:
 
-- **`recall.minScopeDepth`** (default `1`), how specific a scope must be to surface per-file. Bump to `2` to exclude `src/**`-style broad scopes from per-file recall (they still surface at SessionStart). `3+` for strict narrow-scope-only.
+- **`recall.minScopeDepth`** (default `1`): how specific a scope must be to surface per-file. Bump to `2` to exclude `src/**`-style broad scopes from per-file recall (they still surface at SessionStart). `3+` for strict narrow-scope-only.
 - **`recall.limit`** (default `20`): max memories per `aide_recall` call. If a file has more matching memories, the agent gets bounded pagination via follow-up `aide_recall` calls with the next batch of IDs. Bump if you consistently hit the cap.
-- **`memories.softening.threshold`** (default `10`), below this total-memory count, hard blocks become soft nudges. Helps small projects not feel hostile.
+- **`memories.softening.threshold`** (default `10`): below this total-memory count, hard blocks become soft nudges. Helps small projects not feel hostile.
 - **Scope your memories precisely when storing them.** Writing with scope `src/api/routes/**` is less noisy than `src/**`. Only use broad scopes for genuinely project-wide facts (and consider `priority: "always"` at SessionStart for those instead).
 
-Set any of these with:
 ```bash
 npx aide-memory config recall.minScopeDepth 2
 npx aide-memory config recall.limit 30
@@ -193,25 +230,21 @@ Several config knobs let you shape the block behavior:
 
 | Setting | Effect | Default |
 |---|---|---|
-| `hooks.visible` | Hide all user-facing `aide-memory · ...` systemMessage lines (hooks still function) | `true` |
-| `hooks.read.maxBlocks` | Max pre-read hard-blocks per file path per session. `0` disables the pre-read hook entirely | `1` |
-| `hooks.edit.maxBlocks` | Same as above for Edit | `1` |
+| `hooks.visible` | Hide all user-facing `aide-memory · ...` lines (hooks still function) | `true` |
+| `hooks.read.maxBlocks` | Max pre-read hard-blocks per file path per session. `0` disables the pre-read hook entirely. | `1` |
+| `hooks.edit.maxBlocks` | Same for Edit | `1` |
 | `hooks.search.mode` | `"soft"` (nudge only, default), `"block"` (hard block), `"off"` (disabled) | `"soft"` |
 | `hooks.correction.enabled` | Turn UserPromptSubmit correction detection on/off | `true` |
-| `hooks.precompact.mode` | `"cleanup"` (clears tracking on compact) or `"off"` | `"cleanup"` |
-| `memories.softening.threshold` | Below this total-memory count, hard blocks become soft nudges. Small projects stay gentle | `10` |
-
-Set any of these with:
+| `hooks.precompact.mode` | `"cleanup"` clears tracking on compact, `"off"` preserves it | `"cleanup"` |
+| `memories.softening.threshold` | Below this total-memory count, hard blocks become soft nudges | `10` |
 
 ```bash
 npx aide-memory config hooks.read.maxBlocks 0
 npx aide-memory config hooks.visible false
 ```
 
-Future: `recall.mode: "autoInject"` (Phase 1 follow-up) will let you bypass the hard-block path entirely by having the hook inject memory bodies inline instead of prompting `aide_recall`, no "blocking error" label, no extra tool call. See the [auto-inject recall spec](https://github.com/ahmedmmeky/aide-v0/blob/main/docs/specs/PHASE_1_FOLLOWUP_AUTO_INJECT_RECALL.md) for status.
+## Can I use aide-memory without git?
 
-## Can I use AIDE Memory without git?
-
-Yes. AIDE Memory works in any project, git or not. Memories are stored locally in `.aide/`. You just won't get automatic team sync without git.
+Yes. aide-memory works in any project, git or not. Memories are stored locally in `.aide/`. You just won't get automatic team sync without git, and the `post-checkout` rebuild hook isn't installed.
 
 To sync manually between machines, copy the `.aide/` directory.
