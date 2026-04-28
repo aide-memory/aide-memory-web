@@ -20,7 +20,7 @@ export default function HomePage() {
   return (
     <>
       <Head>
-        <title>AIDE Memory — Persistent Memory for AI Coding Agents</title>
+        <title>AIDE Memory, Persistent Memory for AI Coding Agents</title>
         <meta name="description" content="Structured, path-scoped memory that works across sessions and tools. Your agent remembers what you taught it." />
       </Head>
 
@@ -63,7 +63,7 @@ export default function HomePage() {
           <div className="feature-card">
             <div className="feature-icon">&#x1f9e0;</div>
             <h3>Automatic Capture</h3>
-            <p>Six hooks fire at the right moments — corrections, planning decisions, and context are captured without you doing anything.</p>
+            <p>Six hooks fire at the right moments, corrections, planning decisions, and context are captured without you doing anything.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f4cd;</div>
@@ -83,7 +83,7 @@ export default function HomePage() {
           <div className="feature-card">
             <div className="feature-icon">&#x1f4e6;</div>
             <h3>Structured Layers</h3>
-            <p>Four layers — preferences, technical, area context, guidelines — so the right knowledge surfaces at the right time.</p>
+            <p>Four layers, preferences, technical, area context, guidelines, so the right knowledge surfaces at the right time.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x26a1;</div>

@@ -31,12 +31,12 @@ You correct your agent
 
 Six hooks run invisibly at key moments:
 
-- **SessionStart** — Fires when a session begins or resumes. Injects top-N preferences + guidelines + priority-always memories.
-- **PreToolUse** — Fires before the agent reads / edits / searches a file or calls an aide_* MCP tool. Injects nudges or hard-blocks until the agent calls aide_recall.
-- **PostToolUse** — Fires after aide_recall / aide_remember / aide_search. Records what was recalled so re-reads don't re-block.
-- **UserPromptSubmit** — Fires when you correct the agent. Captures your feedback as a memory.
-- **Stop** — Fires when the agent finishes a turn. Prompts: "anything worth remembering?"
-- **PreCompact** — Fires before context compaction. Saves planning decisions before they're lost.
+- **SessionStart**, Fires when a session begins or resumes. Injects top-N preferences + guidelines + priority-always memories.
+- **PreToolUse**, Fires before the agent reads / edits / searches a file or calls an aide_* MCP tool. Injects nudges or hard-blocks until the agent calls aide_recall.
+- **PostToolUse**, Fires after aide_recall / aide_remember / aide_search. Records what was recalled so re-reads don't re-block.
+- **UserPromptSubmit**, Fires when you correct the agent. Captures your feedback as a memory.
+- **Stop**, Fires when the agent finishes a turn. Prompts: "anything worth remembering?"
+- **PreCompact**, Fires before context compaction. Saves planning decisions before they're lost.
 
 ### Memories (.aide/memories/)
 
@@ -70,19 +70,19 @@ Local cache for fast lookup and full-text search (FTS5). Rebuilds automatically 
 
 The MCP server exposes 7 tools for agents:
 
-1. **aide_recall** — Path-scoped memory retrieval with glob inheritance
-2. **aide_remember** — Store a new memory (layer + scope + what/why + tags)
-3. **aide_update** — Edit an existing memory's content, scope, or tags
-4. **aide_forget** — Permanently delete a memory
-5. **aide_search** — FTS5 keyword search with BM25 ranking
-6. **aide_memories** — List memories with layer, scope, contributor, tag filters
-7. **aide_import** — Bulk-import from markdown bullet/numbered lists
+1. **aide_recall**, Path-scoped memory retrieval with glob inheritance
+2. **aide_remember**, Store a new memory (layer + scope + what/why + tags)
+3. **aide_update**, Edit an existing memory's content, scope, or tags
+4. **aide_forget**, Permanently delete a memory
+5. **aide_search**, FTS5 keyword search with BM25 ranking
+6. **aide_memories**, List memories with layer, scope, contributor, tag filters
+7. **aide_import**, Bulk-import from markdown bullet/numbered lists
 
 ## Zero Infrastructure
 
 **No Docker.** No vector database service. No API keys. No cloud dependency.
 
-One npm package. SQLite for caching. JSON files for persistence. Git for sync. The agent's own model for reasoning — zero extra LLM cost.
+One npm package. SQLite for caching. JSON files for persistence. Git for sync. The agent's own model for reasoning, zero extra LLM cost.
 
 ## Cross-Tool Sync
 

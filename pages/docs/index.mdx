@@ -2,7 +2,7 @@
 
 **Structured, persistent, path-scoped memory for AI coding agents.**
 
-AI coding agents have a memory problem. Claude has `CLAUDE.md`, Cursor has `.cursorrules` — but these are static files with no structure, no path scoping, and no automatic capture. Every new session starts from scratch. Your agent doesn't remember what you taught it yesterday.
+AI coding agents have a memory problem. Claude has `CLAUDE.md`, Cursor has `.cursorrules`, but these are static files with no structure, no path scoping, and no automatic capture. Every new session starts from scratch. Your agent doesn't remember what you taught it yesterday.
 
 aide-memory fixes that. Two minutes to set up. Zero config. No Docker, no cloud, no API keys.
 
@@ -14,7 +14,7 @@ npx aide-memory init
 
 ## Why aide-memory?
 
-- **Your agent forgets corrections.** You told it to use `dayjs` not `moment` — next session, it reaches for `moment` again.
+- **Your agent forgets corrections.** You told it to use `dayjs` not `moment`, next session, it reaches for `moment` again.
 - **Context files don't scale.** A flat `CLAUDE.md` with 200 lines of rules becomes noise. No way to scope rules to specific code areas.
 - **No automatic capture.** You have to manually write down what you taught the agent. Nobody does this.
 - **Editor lock-in.** What you teach in Claude Code doesn't carry to Cursor, and vice versa.
@@ -27,7 +27,7 @@ aide-memory solves all four: structured layers, path-scoped recall, hook-driven 
 
 ### 1. Hooks capture context automatically
 
-Four hooks fire during normal development — no manual effort required:
+Four hooks fire during normal development, no manual effort required:
 
 | Hook | When | What it does |
 |------|------|-------------|
@@ -57,12 +57,12 @@ Each memory is a human-readable JSON file in `.aide/memories/`. Commit them, pus
 
 ## What You Get
 
-- **7 MCP tools** — aide_recall, aide_remember, aide_update, aide_forget, aide_search, aide_memories, aide_import
-- **13 CLI commands** — recall, remember, update, forget, search, list, stats, recall-log, config, sync, migrate, cleanup, init
-- **6 hooks** — automatic context capture (SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop, PreCompact) with zero manual effort
-- **FTS5 search** — BM25-ranked full-text search across all memories
-- **Cross-editor** — Claude Code (full integration) and Cursor (~80% parity in 0.5.0); Codex, Copilot, and Windsurf get a rules template
-- **Local-first** — SQLite + JSON files; code and memory content never leave your machine. Anonymized event tallies are sent to PostHog only when you opt in via `AIDE_TELEMETRY=on`
+- **7 MCP tools**, aide_recall, aide_remember, aide_update, aide_forget, aide_search, aide_memories, aide_import
+- **13 CLI commands**, recall, remember, update, forget, search, list, stats, recall-log, config, sync, migrate, cleanup, init
+- **6 hooks**, automatic context capture (SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop, PreCompact) with zero manual effort
+- **FTS5 search**, BM25-ranked full-text search across all memories
+- **Cross-editor**, Claude Code (full integration) and Cursor (~80% parity in 0.5.0); Codex, Copilot, and Windsurf get a rules template
+- **Local-first**, SQLite + JSON files; code and memory content never leave your machine. Anonymized event tallies are sent to PostHog only when you opt in via `AIDE_TELEMETRY=on`
 
 ---
 
@@ -71,7 +71,7 @@ Each memory is a human-readable JSON file in `.aide/memories/`. Commit them, pus
 Ready to give your agent a memory? Head to the [Quick Start](/docs/quick-start) guide.
 
 Or explore:
-- [Features](/docs/features) — all capabilities explained
-- [Architecture](/docs/architecture) — how storage, hooks, and recall work
-- [Comparison](/docs/comparison) — how aide-memory stacks up against alternatives
-- [FAQ](/docs/faq) — common questions
+- [Features](/docs/features), all capabilities explained
+- [Architecture](/docs/architecture), how storage, hooks, and recall work
+- [Comparison](/docs/comparison), how aide-memory stacks up against alternatives
+- [FAQ](/docs/faq), common questions

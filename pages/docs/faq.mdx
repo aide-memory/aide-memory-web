@@ -14,7 +14,7 @@ Yes. AIDE Memory supports Claude Code and Cursor out of the box. The init comman
 
 Code and memory content never leave your machine. Memories are JSON files on your disk; SQLite is a local cache; the MCP server communicates over stdio, not HTTP.
 
-The one network surface is opt-in PostHog telemetry. When you opt in via `AIDE_TELEMETRY=on`, aide-memory sends anonymized event tallies (event type, a SHA256-hashed `hostname:username` for deduplication, platform, Node version) so we can see which features are used. **What's never sent:** memory content, file paths, code, query strings, or anything user-identifying. **Default is off** — do nothing and no events are transmitted.
+The one network surface is opt-in PostHog telemetry. When you opt in via `AIDE_TELEMETRY=on`, aide-memory sends anonymized event tallies (event type, a SHA256-hashed `hostname:username` for deduplication, platform, Node version) so we can see which features are used. **What's never sent:** memory content, file paths, code, query strings, or anything user-identifying. **Default is off**, do nothing and no events are transmitted.
 
 `aide-memory stats` (the local-only analytics dashboard) runs against a separate local-SQLite writer and is independent of the PostHog opt-in.
 
@@ -47,7 +47,7 @@ If you delete the entire `.aide/` directory, all memories are lost. Restore from
 
 ## How much disk space do memories use?
 
-Memories are small — each is a single JSON file (~1-5 KB). Even with thousands of memories, the entire `.aide/` directory is typically under 50 MB.
+Memories are small, each is a single JSON file (~1-5 KB). Even with thousands of memories, the entire `.aide/` directory is typically under 50 MB.
 
 ## Can I share memories across projects?
 
@@ -87,7 +87,7 @@ If you have specific use cases, file an issue on GitHub.
 
 ## What's the license?
 
-aide-memory is **proprietary freeware**. Free for everyone today. The plan: keep core memory features free for solo developers, add more free enhancements over time, and potentially layer paid team/pro features in the future. The source is not public — aide-memory is not open source, not FSL, not Apache 2.0, not MIT. You can use it freely; you cannot recreate, fork, or redistribute it.
+aide-memory is **proprietary freeware**. Free for everyone today. The plan: keep core memory features free for solo developers, add more free enhancements over time, and potentially layer paid team/pro features in the future. The source is not public, aide-memory is not open source, not FSL, not Apache 2.0, not MIT. You can use it freely; you cannot recreate, fork, or redistribute it.
 
 See the LICENSE file for the exact terms.
 
@@ -109,7 +109,7 @@ Or email support@aide-memory.dev
 
 ## Can I contribute?
 
-aide-memory is proprietary freeware — the source is not public, so external pull requests aren't accepted. Bug reports, feature requests, and feedback are very welcome on the issue tracker.
+aide-memory is proprietary freeware, the source is not public, so external pull requests aren't accepted. Bug reports, feature requests, and feedback are very welcome on the issue tracker.
 
 ## How does path scoping work exactly?
 
@@ -140,7 +140,7 @@ Or share a single `.aide/` at the root with path scoping to keep memories separa
 
 The agent gets a nudge in the system message, but isn't forced to call the tool. If the agent decides the memory isn't relevant, it skips the recall.
 
-This is intentional — nudges respect the agent's judgment. If memories are being ignored, check:
+This is intentional, nudges respect the agent's judgment. If memories are being ignored, check:
 
 1. Is the memory path scope correct?
 2. Is the memory description clear?
@@ -166,19 +166,19 @@ Or check your editor's Claude Code extension logs for nudge messages.
 
 ## Why do I sometimes see "PreToolUse:Read hook returned blocking error"?
 
-That label is rendered by Claude Code for any intentional hook block — it's **not an AIDE Memory crash**. When AIDE Memory detects scoped memories for a file you're about to read, it asks your agent to call `aide_recall` first so the context is loaded before the read. Claude Code's TUI renders this enforcement with a hardcoded "blocking error" label that hooks cannot customize.
+That label is rendered by Claude Code for any intentional hook block, it's **not an AIDE Memory crash**. When AIDE Memory detects scoped memories for a file you're about to read, it asks your agent to call `aide_recall` first so the context is loaded before the read. Claude Code's TUI renders this enforcement with a hardcoded "blocking error" label that hooks cannot customize.
 
-The reason text beneath the label tells you what's happening (e.g. "3 memories for src/foo.ts not yet recalled. Call aide_recall({ids: [10,9,4]})"). AIDE Memory also surfaces an accompanying `aide-memory · prompting aide_recall for scoped memories (expected flow)` line to confirm this is expected behavior.
+The reason text beneath the label tells you what's happening (e.g. `3 memories for src/foo.ts not yet recalled. Call aide_recall({ids: [10,9,4]})`). AIDE Memory also surfaces an accompanying `aide-memory · prompting aide_recall for scoped memories (expected flow)` line to confirm this is expected behavior.
 
-We've asked Anthropic to add a non-alarming label option for intentional blocks. In the meantime, you have several ways to tune the frequency or disable blocks entirely — see the next question.
+We've asked Anthropic to add a non-alarming label option for intentional blocks. In the meantime, you have several ways to tune the frequency or disable blocks entirely, see the next question.
 
 ## How do I tune per-file recall noise / performance?
 
-If AIDE Memory feels too chatty when you open files — especially in large projects with many broad-scoped memories — you have a few dials:
+If AIDE Memory feels too chatty when you open files, especially in large projects with many broad-scoped memories, you have a few dials:
 
-- **`recall.minScopeDepth`** (default `1`) — how specific a scope must be to surface per-file. Bump to `2` to exclude `src/**`-style broad scopes from per-file recall (they still surface at SessionStart). `3+` for strict narrow-scope-only.
-- **`recall.limit`** (default `20`) — max memories per `aide_recall` call. If a file has more matching memories, the agent gets bounded pagination via follow-up `aide_recall({ids: [next-batch]})` calls. Bump if you consistently hit the cap.
-- **`memories.softening.threshold`** (default `10`) — below this total-memory count, hard blocks become soft nudges. Helps small projects not feel hostile.
+- **`recall.minScopeDepth`** (default `1`), how specific a scope must be to surface per-file. Bump to `2` to exclude `src/**`-style broad scopes from per-file recall (they still surface at SessionStart). `3+` for strict narrow-scope-only.
+- **`recall.limit`** (default `20`): max memories per `aide_recall` call. If a file has more matching memories, the agent gets bounded pagination via follow-up `aide_recall` calls with the next batch of IDs. Bump if you consistently hit the cap.
+- **`memories.softening.threshold`** (default `10`), below this total-memory count, hard blocks become soft nudges. Helps small projects not feel hostile.
 - **Scope your memories precisely when storing them.** Writing with scope `src/api/routes/**` is less noisy than `src/**`. Only use broad scopes for genuinely project-wide facts (and consider `priority: "always"` at SessionStart for those instead).
 
 Set any of these with:
@@ -208,7 +208,7 @@ npx aide-memory config hooks.read.maxBlocks 0
 npx aide-memory config hooks.visible false
 ```
 
-Future: `recall.mode: "autoInject"` (Phase 1 follow-up) will let you bypass the hard-block path entirely by having the hook inject memory bodies inline instead of prompting `aide_recall` — no "blocking error" label, no extra tool call. See the [auto-inject recall spec](https://github.com/ahmedmmeky/aide-v0/blob/main/docs/specs/PHASE_1_FOLLOWUP_AUTO_INJECT_RECALL.md) for status.
+Future: `recall.mode: "autoInject"` (Phase 1 follow-up) will let you bypass the hard-block path entirely by having the hook inject memory bodies inline instead of prompting `aide_recall`, no "blocking error" label, no extra tool call. See the [auto-inject recall spec](https://github.com/ahmedmmeky/aide-v0/blob/main/docs/specs/PHASE_1_FOLLOWUP_AUTO_INJECT_RECALL.md) for status.
 
 ## Can I use AIDE Memory without git?
 

@@ -117,15 +117,15 @@ npx aide-memory config <key> <value>   # write
 
 Common knobs:
 
-- `embeddings.backend` — `"auto"` (default), `"transformers"`, `"ollama"`, or `"none"`
-- `embeddings.model` — model to use (Transformers.js or Ollama, e.g. `"nomic-embed-text"`)
-- `hooks.visible` — show/hide `aide-memory · ...` systemMessage lines in your terminal (default `true`). Flipping to `false` hides the surface without disabling the hooks underneath.
-- `hooks.read.maxBlocks` / `hooks.edit.maxBlocks` — how many times per session pre-read / pre-edit hooks can hard-block (`0` to disable, `1` default)
-- `hooks.search.mode` — `"soft"` (default), `"block"`, or `"off"` for the Grep nudge
-- `hooks.correction.enabled` — `true`/`false` for UserPromptSubmit correction detection
-- `hooks.precompact.mode` — `"cleanup"` (default) or `"off"`
-- `memories.softening.threshold` — below this total-memory count, hard blocks become soft nudges (default `10`)
-- `memories.defaultShared` — default `shared` value for new `preferences` memories. Per-call `shared: true|false` always overrides.
+- `embeddings.backend`, `"auto"` (default), `"transformers"`, `"ollama"`, or `"none"`
+- `embeddings.model`, model to use (Transformers.js or Ollama, e.g. `"nomic-embed-text"`)
+- `hooks.visible`, show/hide `aide-memory · ...` systemMessage lines in your terminal (default `true`). Flipping to `false` hides the surface without disabling the hooks underneath.
+- `hooks.read.maxBlocks` / `hooks.edit.maxBlocks`, how many times per session pre-read / pre-edit hooks can hard-block (`0` to disable, `1` default)
+- `hooks.search.mode`, `"soft"` (default), `"block"`, or `"off"` for the Grep nudge
+- `hooks.correction.enabled`, `true`/`false` for UserPromptSubmit correction detection
+- `hooks.precompact.mode`, `"cleanup"` (default) or `"off"`
+- `memories.softening.threshold`, below this total-memory count, hard blocks become soft nudges (default `10`)
+- `memories.defaultShared`, default `shared` value for new `preferences` memories. Per-call `shared: true|false` always overrides.
 
 See the full config schema in `scripts/hooks/defaults.json` in the aide-memory repo.
 
@@ -198,7 +198,7 @@ npx aide-memory sync import
 
 ## Next Steps
 
-- **[Features](/docs/features)** — All 8 features explained
-- **[Architecture](/docs/architecture)** — How AIDE Memory works under the hood
-- **[Comparison](/docs/comparison)** — vs claude-mem and engram
-- **[FAQ](/docs/faq)** — Common questions
+- **[Features](/docs/features)**, All 8 features explained
+- **[Architecture](/docs/architecture)**, How AIDE Memory works under the hood
+- **[Comparison](/docs/comparison)**, vs claude-mem and engram
+- **[FAQ](/docs/faq)**, Common questions

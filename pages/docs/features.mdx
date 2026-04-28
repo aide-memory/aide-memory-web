@@ -4,15 +4,15 @@
 
 ## 1. Hook-Driven Capture
 
-Six hooks drive 100% adoption — not 0%. Corrections, decisions, and preferences are captured at the moment they happen, not when the agent feels like saving them.
+Six hooks drive 100% adoption, not 0%. Corrections, decisions, and preferences are captured at the moment they happen, not when the agent feels like saving them.
 
 **Hooks:**
-- `SessionStart` — Session begins or resumes (injects top-N preferences + guidelines + priority-always memories)
-- `PreToolUse` — Before the agent reads / edits / searches a file or calls an aide_* MCP tool
-- `PostToolUse` — After aide_recall / aide_remember / aide_search (records what was recalled)
-- `UserPromptSubmit` — When you correct the agent
-- `Stop` — When the agent finishes a turn
-- `PreCompact` — Before context compaction
+- `SessionStart`, Session begins or resumes (injects top-N preferences + guidelines + priority-always memories)
+- `PreToolUse`, Before the agent reads / edits / searches a file or calls an aide_* MCP tool
+- `PostToolUse`, After aide_recall / aide_remember / aide_search (records what was recalled)
+- `UserPromptSubmit`, When you correct the agent
+- `Stop`, When the agent finishes a turn
+- `PreCompact`, Before context compaction
 
 ---
 
@@ -37,10 +37,10 @@ Every memory is a single JSON file in `.aide/memories/<layer>/`. No separate syn
 ## 5. Structured Memory Layers
 
 Four layers keep memories organized: 
-- `preferences` — Your coding style
-- `technical` — Codebase facts
-- `area_context` — File and module notes
-- `guidelines` — Team rules
+- `preferences`, Your coding style
+- `technical`, Codebase facts
+- `area_context`, File and module notes
+- `guidelines`, Team rules
 
 Recall filters by layer and path.
 
