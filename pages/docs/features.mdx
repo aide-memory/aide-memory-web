@@ -1,63 +1,90 @@
 # Features
 
----
+A scannable cheat sheet of what's in the box. For the mental model behind these, see [Concepts](/docs/concepts); for runtime UX inside a specific tool, see [Supported Editors](/docs/supported-editors).
 
-## 1. Hook-Driven Capture
+## At a glance
 
-Six hooks drive 100% adoption, not 0%. Corrections, decisions, and preferences are captured at the moment they happen, not when the agent feels like saving them.
+- **7 MCP tools** for the agent: `aide_recall`, `aide_remember`, `aide_update`, `aide_forget`, `aide_search`, `aide_memories`, `aide_import`
+- **13 CLI commands** for you: `init`, `recall`, `remember`, `update`, `forget`, `search`, `list`, `stats`, `recall-log`, `config`, `sync`, `migrate`, `cleanup`
+- **6 hooks** wired into the editor at init
+- **4 typed memory layers** with a personal/shared split for preferences
+- **Local-first storage** (JSON files + SQLite cache, no cloud)
+- **Cross-editor** (Claude Code + Cursor; more in flight)
+- **Free** for individuals; potential team/pro tiers later
 
-**Hooks:**
-- `SessionStart`, Session begins or resumes (injects top-N preferences + guidelines + priority-always memories)
-- `PreToolUse`, Before the agent reads / edits / searches a file or calls an aide_* MCP tool
-- `PostToolUse`, After aide_recall / aide_remember / aide_search (records what was recalled)
-- `UserPromptSubmit`, When you correct the agent
-- `Stop`, When the agent finishes a turn
-- `PreCompact`, Before context compaction
+## Capture (hooks)
 
----
+Six hooks fire automatically in your editor:
 
-## 2. Path-Scoped Recall
+- **SessionStart**, injects top-N preferences + guidelines + priority-always memories
+- **PreToolUse**, blocks first read of a file with scoped memories until `aide_recall` runs; soft-nudges thereafter; configurable per-mode
+- **PostToolUse**, records what was recalled so re-reads don't re-prompt
+- **UserPromptSubmit**, detects correction patterns and prompts the agent to call `aide_remember`
+- **Stop**, periodic "anything worth remembering?" reflection nudge on a configurable schedule (default: every 3 / 5 / 10 turns ramp)
+- **PreCompact**, prompts the agent to save active plans/decisions before compaction; clears session tracking so post-compact reads re-prompt cleanly
 
-A memory about test utilities surfaces when you open test files, not when you open database migrations. Glob inheritance means `src/**` memories are available everywhere under `src/`, but `src/checkout/**` memories only surface in checkout code.
+## Recall (path-scoped + layered)
 
----
+- Glob scopes with **inheritance**: `src/auth/**` covers everything under it; querying `src/` matches sub-scoped memories
+- **Layer priority**: `area_context` > `technical` > `preferences` > `guidelines`
+- **Scope specificity**: deeper scopes rank above broader scopes within a layer
+- **Layer diversity rebalance**: when total results are small, under-represented layers swap up so each enabled layer is represented
+- **Bounded pagination**: `recall.limit` (default 20) caps per-call returns; remaining IDs nudge the agent to fetch the next batch
+- **`recall.minScopeDepth` dial**: tune which scopes qualify for per-file recall vs SessionStart-only
 
-## 3. Nudge, Not Dump
+## Search (keyword + optional semantic)
 
-~20 tokens per nudge versus ~2,000 tokens dumped into the system prompt. The agent is told context exists and decides relevance. Over hundreds of file reads per day, this saves tens of thousands of tokens.
+- **FTS5 BM25** keyword search across `what` and `why` fields
+- **LIKE fallback** when FTS5 is unavailable
+- **Optional semantic supplement** when fewer than 3 keyword hits are found, via:
+  - Local Transformers.js (`@huggingface/transformers`, in optional dependencies)
+  - Local Ollama server (`http://localhost:11434`)
+  - No extra setup if you don't want semantic; keyword search works fine on its own
 
----
+## Storage (file-per-memory + SQLite cache)
 
-## 4. File-Per-Memory, Git Syncs
+- One JSON file per memory under `.aide/memories/<layer>/`
+- `.aide/memories/preferences/personal/` is gitignored
+- `.aide/memories/preferences/shared/` and the other three layers are committed to the repo
+- Local SQLite cache at `~/.aide/projects/<hash>/memory.db` (WAL mode), rebuildable from the JSON files
+- `post-checkout` git hook rebuilds the cache after `git pull` or branch switch
 
-Every memory is a single JSON file in `.aide/memories/<layer>/`. No separate sync mechanism. Memories are files. Files are committed. Git syncs them. Delete SQLite and it rebuilds from the JSON files.
+## Sync (git)
 
----
+- `git add .aide/memories/` then commit and push
+- Teammates `git pull` and the post-checkout hook rebuilds their cache
+- Conflicts resolve by `updated_at` timestamp; newer wins
+- No sync service, no auth, no daemon
 
-## 5. Structured Memory Layers
+## Editor support today
 
-Four layers keep memories organized: 
-- `preferences`, Your coding style
-- `technical`, Codebase facts
-- `area_context`, File and module notes
-- `guidelines`, Team rules
+- **Claude Code**: reference adapter, every feature works as designed. `aide-memory init` writes `.claude/settings.json`, `.mcp.json`, `.claude/rules/aide-memory.md`. Restart Claude Code after init so it picks up the new MCP server.
+- **Cursor**: full hook + MCP wiring. `aide-memory init` writes `.cursor/hooks.json`, `.cursor/mcp.json`, and a dynamically-regenerated `.cursor/rules/aide-memory.mdc`. **Restart Cursor (Cmd+Q) and enable the aide-memory MCP server** in Cursor → Settings → MCP, both required first time.
+- **Codex / Copilot / Windsurf**: rules template only at launch; full adapters tracked as ongoing work.
 
-Recall filters by layer and path.
+See [Supported Editors](/docs/supported-editors) for the full capability matrix.
 
----
+## Configurable everything
 
-## 6. Cross-Tool Portability
+- **6 hook controls** (`hooks.read.maxBlocks`, `hooks.edit.maxBlocks`, `hooks.search.mode`, `hooks.correction.enabled`, `hooks.precompact.mode`, `hooks.stop.schedule`, `hooks.visible`)
+- **4 recall controls** (`recall.limit`, `recall.ensureLayerDiversity`, `recall.layerDiversityMinLimit`, `recall.minScopeDepth`)
+- **7 SessionStart-injection controls** (`injection.enabled`, `injection.preferences`, `injection.excludeScopedPreferences`, `injection.technical`, `injection.area_context`, `injection.guidelines`, `injection.priorityAlwaysOverride`, `injection.maxChars`)
+- **3 memory-storage controls** (`memories.hideFromGrep`, `memories.softening.threshold`, `memories.defaultShared`)
+- **Embeddings**: `embeddings.backend` (auto / transformers / ollama / none) and `embeddings.model`
+- **Identity**: `contributor` (default `auto` reads `git config user.name`)
+- **Tags**: `tags.presets` array
+- **Updates**: `updates.check` (non-blocking npm version check)
 
-Claude Code and Cursor supported out of the box. Same memories, same hooks, same MCP server. Switch tools mid-task and your context follows you.
+Run `aide-memory config <key>` to read, `aide-memory config <key> <value>` to set, or edit `.aide/config.json` directly.
 
----
+## Privacy
 
-## 7. Full-Text Search
+- **Code and memory content never leave your machine.**
+- Telemetry (anonymized event counts only) is **opt-in** via `AIDE_TELEMETRY=on`. Default is off.
+- When opted in, only the event type, a SHA256-hashed `hostname:username` for deduplication, the platform, and the Node version are sent. No memory content, file paths, query strings, or any other user-identifying data.
 
-BM25-ranked search via FTS5. Find any memory by keyword instantly. Falls back to LIKE-based search when FTS5 is unavailable.
+## Free / pricing
 
----
-
-## 8. No Cloud, No Docker, No API Keys
-
-Everything runs locally. One npm package, SQLite for caching, JSON files for persistence. Your memories never leave your machine unless you commit them to your repo.
+- aide-memory is **proprietary freeware**. Free to use today.
+- Future enhancements may stay free; some may ship as paid team / pro tiers.
+- The core memory engine stays free for solo developers.

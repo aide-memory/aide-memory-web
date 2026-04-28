@@ -2,6 +2,10 @@
 
 Claude Code is aide-memory's **reference adapter**. Every feature in the [capability matrix](/docs/supported-editors) works here as designed. New aide-memory features are validated against Claude Code first; other adapters follow.
 
+## First-time setup
+
+`aide-memory init` writes Claude Code's config files, but Claude Code reads `.mcp.json` once at session start. **Restart your Claude Code session after `aide-memory init`** so the MCP server registers and the seven tools become available. Otherwise the hooks fire and tell the agent to "call `aide_recall`" but the tool isn't available yet.
+
 ## What you'll see
 
 **At init.** `aide-memory init` creates:
@@ -9,7 +13,7 @@ Claude Code is aide-memory's **reference adapter**. Every feature in the [capabi
 - `.claude/settings.json`, hook registrations (six events: SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop, PreCompact)
 - `.mcp.json`, MCP server pointing at `dist/memory/cli.js`
 - `.claude/rules/aide-memory.md`, agent instructions (static template)
-- `.aide/config.json`, aide-memory configuration
+- `.aide/config.json`, aide-memory configuration with every public setting seeded
 - `.aide/memories/`, the four layer directories
 - `.ignore` and `.gitignore` entries for derived artifacts
 
@@ -72,7 +76,7 @@ See [Cursor editor page](/docs/editors/cursor) for the full Cursor gap list, and
 
 **Hook not firing.** Verify `.claude/settings.json` contains a `hooks` key with aide-memory scripts wired to each event. If it is missing or looks stale, run `aide-memory init --force` to re-install.
 
-**MCP tool calls failing.** Check that `.mcp.json` exists at the project root and points at a current `dist/memory/cli.js`. If you just ran `aide-memory init`, restart Claude Code so it picks up the new MCP config (Claude Code re-reads `.mcp.json` on restart, not live).
+**MCP tool calls failing.** Check that `.mcp.json` exists at the project root and points at a current `dist/memory/cli.js`. If you just ran `aide-memory init`, **restart Claude Code** so it picks up the new MCP config (Claude Code re-reads `.mcp.json` on restart, not live). Same applies if you upgrade aide-memory; the auto-update touches `.mcp.json` and you'll need a fresh session for the new MCP server binary to load.
 
 **"PreToolUse hook returned blocking error" text looks alarming.** The red-error wording around our `decision: "block"` is hardcoded in Claude Code's TUI and cannot be customized. Our accompanying `systemMessage` (`aide-memory · prompting aide_recall...`) is the reassurance line; the block is the expected flow, not a failure.
 

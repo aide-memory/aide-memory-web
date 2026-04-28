@@ -2,7 +2,9 @@
 
 aide-memory is editor-agnostic at the core: the memory store, the seven MCP tools, and the hook dispatcher are the same across every tool. Each editor integration is an **adapter** that translates aide-memory's canonical events and matchers into that editor's config shape and hook I/O contract. This page is the honest accounting of what each adapter ships today.
 
-**TL;DR.** Claude Code is the reference implementation: every feature below works there. Cursor ships with full hook + MCP wiring; a handful of capabilities are tracked against upstream Cursor platform work and will upgrade as Cursor ships the corresponding changes. Codex, Copilot, and Windsurf are **rule-template only** today: their adapters write a curated rules file but do not yet generate hooks or MCP config at `aide-memory init`.
+**TL;DR.** Claude Code is the reference implementation: every feature below works there. Cursor ships with full hook + MCP wiring; a handful of capabilities are tracked against upstream Cursor platform work and will upgrade as Cursor ships the corresponding changes. Codex, Copilot, and Windsurf get a curated rules template at launch; full hook + MCP adapters for each are in flight.
+
+Both Claude Code and Cursor require **a one-time editor restart** after `aide-memory init` so the MCP server registers. Cursor adds a second step (toggle the aide-memory MCP server ON in Settings → MCP) since Cursor disables newly-discovered MCP servers by default.
 
 ## Legend
 
@@ -56,7 +58,7 @@ aide-memory is editor-agnostic at the core: the memory store, the seven MCP tool
 
 **Cursor** ships with aide-memory at strong parity with Claude Code. `aide-memory init` writes `.cursor/hooks.json`, `.cursor/mcp.json`, and `.cursor/rules/aide-memory.mdc` (the last one auto-regenerates on memory and config changes). Soft nudges reach the agent via `agent_message`, hard blocks render branded chrome inline. Each gap maps to an upstream Cursor bug or feature request tracked in [editors/cursor](/docs/editors/cursor); when Cursor fixes a thread, the adapter upgrades and the workaround retires.
 
-**Codex, Copilot, Windsurf** ship a curated rule template (same canonical body as Claude Code and Cursor, plus editor-specific frontmatter) but `aide-memory init` does **not** yet generate hook or MCP config files for these editors. The rule template alone gives agents the instruction to use the seven MCP tools, but automatic capture (hooks) is not wired. Full adapter onboarding is a post-launch task.
+**Codex, Copilot, Windsurf** ship a curated rule template (same canonical body as Claude Code and Cursor, plus editor-specific frontmatter). `aide-memory init` does not yet generate hook or MCP config files for these editors; full adapters are in flight. The rule template alone gives agents the instruction to use the seven MCP tools (when wired manually), but automatic capture via hooks isn't there yet.
 
 ## Per-editor pages
 

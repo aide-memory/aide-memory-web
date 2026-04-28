@@ -1,31 +1,29 @@
 # Hooks
 
-Hooks are the core of aide-memory's capture system. Instead of relying on voluntary `aide_remember` calls (which studies show approach 0% adoption), hooks inject context at the right moments so capture happens automatically.
+Hooks are the core of aide-memory's capture system. The agent does not call them; the editor does. Capture happens because the editor invokes the hook at the right moment, not because anyone remembers to call a tool.
 
 ## Overview
 
-Six hook scripts fire at different points in the agent lifecycle, across six event types:
+Six hooks fire across the session lifecycle, plus one optional git hook for sync.
 
 | Hook | Event type | Fires when | What it does |
 |------|-----------|-----------|--------------|
-| Read / Edit | PreToolUse:Read, PreToolUse:Write | Agent is about to read or edit a file | Shows layer counts + topics, blocks until recalled |
-| Track recall | PreToolUse:aide_recall | Agent calls aide_recall | Records recalled paths for session-scoped tracking |
-| SessionStart | SessionStart | Session starts or resumes | Cleans up stale tracking; injects top-N preferences + guidelines |
-| UserPromptSubmit | UserPromptSubmit | User sends a message | Detects corrections, decisions, preferences (soft nudge) |
-| Stop | Stop | Agent finishes responding | Blocks: "Anything worth remembering?" |
-| PreCompact | PreCompact | Context is about to be compacted | Blocks + clears session tracking before context loss |
+| Read / Edit | PreToolUse:Read, PreToolUse:Write | Agent is about to read or edit a file | Shows layer counts + topics; first read of a scoped path is blocked until `aide_recall` runs; later reads are soft-nudged or silent |
+| Track recall | PreToolUse:`aide_recall` | Agent calls `aide_recall` | Records recalled paths for session-scoped tracking so re-reads don't re-prompt |
+| SessionStart | SessionStart | Session starts or resumes | Cleans up stale tracking; injects top-N preferences + guidelines + priority-always memories |
+| Stop | Stop | Agent finishes responding | Periodic "anything worth remembering?" reflection prompt on a configurable schedule |
+| UserPromptSubmit | UserPromptSubmit | User sends a message | Detects corrections, decisions, preferences and prompts the agent to call `aide_remember` (soft nudge) |
+| PreCompact | PreCompact | Context is about to be compacted | Prompts the agent to save active plans/decisions; clears session tracking so post-compact reads re-prompt cleanly |
 
-An optional git hook handles sync:
-
-| Hook | Fires when | What it does |
+| Git hook | Fires when | What it does |
 |------|-----------|--------------|
-| post-checkout | Branch switch or pull | Rebuilds SQLite cache from JSON files |
+| post-checkout | Branch switch or `git pull` | Rebuilds SQLite cache from JSON files |
 
-## Read hook (PreToolUse:Read)
+## Read / Edit hook (PreToolUse)
 
-**File:** `scripts/hooks/pre-read-recall.sh`
+**Files:** `scripts/hooks/pre-read-recall.sh`, `scripts/hooks/pre-edit-recall.sh`
 
-Fires before the agent reads a file. The hook counts memories scoped to that file path using direct SQLite access and shows a breakdown by layer and topic:
+Fires before the agent reads or edits a file. The hook counts memories scoped to that path and shows a breakdown by layer and topic:
 
 ```
 19 memories for src/auth/middleware.ts (5 technical, 8 area_context, 4 preferences, 2 guidelines), topics: JWT, middleware, validation. Call aide_recall if results not already in this conversation.
@@ -33,81 +31,108 @@ Fires before the agent reads a file. The hook counts memories scoped to that fil
 
 The hook never dumps memory content; only counts, layers, and topic keywords. The agent decides whether to call `aide_recall` to fetch actual memories.
 
-**Session-scoped blocking:** On the first read of a path in a session, the hook **blocks** until the agent calls `aide_recall`. After recall, subsequent reads of the same path get a soft nudge only. Tracking uses a session-scoped file (`.aide/cache/recalled-paths-{session_id}.txt`) written by the track-recall hook. Directory prefix matching applies: recalling `src/auth/` covers `src/auth/middleware.ts`.
+**Session-scoped behavior:**
+- **First read** of a path with un-recalled scoped memories: **blocks** until the agent calls `aide_recall`
+- **After recall**: subsequent reads of the same path are **silent** (tracking file confirms recall happened) or **soft-nudged** if new memories arrived since the last recall
+- Tracking lives at `.aide/cache/recalled-paths-{session_id}.txt`, written by the track-recall hook
+- Directory prefix matching applies: recalling `src/auth/` covers `src/auth/middleware.ts`
 
-**Special case:** If the agent tries to read a raw `.aide/memories/` file directly, the hook warns:
+**All configurable:**
+- `hooks.read.maxBlocks: 1` (default), `0` disables the read hook entirely
+- `hooks.edit.maxBlocks: 1` (default), `0` disables the edit hook entirely
+- `memories.softening.threshold: 10` (default), below this total-memory count, hard blocks become soft nudges so new projects don't feel hostile
+
+**Special case:** if the agent tries to read a raw `.aide/memories/` JSON file directly, the hook warns:
 ```
 memory_file_direct_read: You are reading a raw memory file. Use aide_recall for structured context.
 ```
 
-## Track recall hook (PreToolUse:aide_recall)
+## Track-recall hook (PreToolUse:aide_recall)
 
 **File:** `scripts/hooks/track-recall.sh`
 
-Fires before the agent calls `aide_recall`. The hook writes the recalled paths to a session-scoped tracking file so the Read hook knows not to block again for those paths.
+Fires before the agent calls `aide_recall`. Writes the recalled paths to `.aide/cache/recalled-paths-{session_id}.txt` so the read hook stops blocking on those paths for the rest of the session.
 
 ## SessionStart hook
 
 **File:** `scripts/hooks/session-start-clear.sh`
 
-Fires when the editor starts, resumes, or clears a session. Cleans up stale recalled-paths tracking files from other sessions while preserving the current session's file. On Claude Code, also injects top-N preferences + guidelines + priority-always memories as session context.
+Fires when the editor starts, resumes, or clears a session.
 
-## Stop hook
+**On Claude Code (native channel):** injects top-N preferences + guidelines + priority-always memories into the agent's starting context, bounded by `injection.maxChars` (default 1200).
+
+**On Cursor (workaround channel):** the same content is delivered via a dynamically-regenerated `.cursor/rules/aide-memory.mdc` file rather than the broken `sessionStart.additional_context` channel ([Cursor #158452](https://forum.cursor.com/t/sessionstart-hook-additional-context-is-never-injected-into-agents-initial-system-context/158452), staff-confirmed).
+
+Either way, the hook also cleans up stale `recalled-paths-*` tracking files from ended sessions while preserving the current session's file.
+
+## Stop hook (periodic reflection)
 
 **File:** `scripts/hooks/stop-remember.sh`
 
-Fires when the agent finishes its response. The hook blocks the first stop attempt and injects a reflection prompt:
+Fires when the agent finishes a turn. Runs on a **configurable schedule** so the prompt feels right at every session length:
 
 ```
-Before finishing: anything non-obvious worth persisting (constraints, decisions, corrections)? Call aide_remember (layer, scope, source:hook). If nothing to store, stop.
+Default hooks.stop.schedule:
+  Phase 1 (turns 1 through 9):  every 3 turns   (dense, fresh decisions)
+  Phase 2 (turns 10 through 29): every 5 turns  (mid-session)
+  Phase 3 (turns 30+):          every 10 turns  (long session)
 ```
 
-On the second stop (`stop_hook_active=true`), the hook exits cleanly to avoid infinite loops. This means the agent gets exactly one reflection prompt per task completion.
+When it does fire, the hook prompts the agent:
 
-## UserPromptSubmit hook
+```
+Anything worth remembering? Call aide_remember if this turn produced a decision, correction, or non-obvious finding.
+```
+
+Override via:
+
+```bash
+aide-memory config hooks.stop.schedule '[{"every":5}]'         # every 5, forever
+aide-memory config hooks.stop.schedule '[{"every":999999}]'    # effectively off
+```
+
+## UserPromptSubmit hook (correction detection)
 
 **File:** `scripts/hooks/detect-correction.sh`
 
-Fires when the user sends a message. The hook scans the message for three patterns and injects a **soft nudge** (never blocking, blocking on UserPromptSubmit would reject the user's message entirely):
+Fires when you send a message. Scans the message for three pattern families and injects a **soft nudge** (never blocking, since blocking on UserPromptSubmit would reject your message entirely):
 
-**Corrections** (user is fixing agent behavior):
-- Triggers on: "no, don't", "actually,", "that's wrong", "use X instead", "stop using", "I told you"
-- Suggests: `aide_remember` with layer `preferences` or `technical`
+| Pattern | Example | Suggested action |
+|---|---|---|
+| Correction | "no, don't", "actually,", "use X instead", "stop using" | `aide_remember` with layer `preferences` or `technical` |
+| Decision | "let's use", "we should", "go with", "decided to", "from now on" | `aide_remember` with layer `area_context` or `technical` |
+| Preference | "I prefer", "always use", "never use", "my style is" | `aide_remember` with layer `preferences` |
 
-**Decisions** (user is making a choice):
-- Triggers on: "let's use", "we should", "go with", "decided to", "from now on"
-- Suggests: `aide_remember` with layer `area_context` or `technical`
+Only the first matching pattern fires. The hook does not store anything itself; it tells the agent what was detected and prompts the appropriate `aide_remember` call.
 
-**Preferences** (user is expressing style):
-- Triggers on: "I prefer", "always use", "never use", "my style is", "don't ever"
-- Suggests: `aide_remember` with layer `preferences`
-
-Only the first matching pattern fires. The hook does not store anything itself; it injects context telling the agent what it detected and suggests the appropriate `aide_remember` call.
+Disable with `aide-memory config hooks.correction.enabled false`.
 
 ## PreCompact hook
 
 **File:** `scripts/hooks/pre-compact-save.sh`
 
-Fires before both manual `/compact` and auto-compact. This is a high-value hook, context loss from compaction is a common pain point. The hook **blocks** compaction and prompts the agent to save anything important:
+Fires before manual `/compact` and auto-compact. Two behaviors:
 
-```
-Context compacting. Save key decisions/constraints via aide_remember (source: hook) before they are lost. If nothing to store, stop.
-```
+1. **Prompts the agent to save active plans/decisions** before the context window collapses:
 
-The hook also **clears the current session's recalled-paths file**. After compaction, the agent's context no longer contains previous tool results, so paths must be re-recalled on next read.
+   ```
+   Context compacting. Save key decisions/constraints via aide_remember (source: hook) before they are lost. If nothing to store, stop.
+   ```
 
-## post-checkout hook
+2. **Clears session tracking** (`recalled-paths-<sid>.txt`, `stop-count-<sid>.txt`, `correction-pending-<sid>.txt`) so the post-compact turn re-prompts cleanly. After compaction, the agent's context no longer contains the previous tool results, so paths must be re-recalled on next read.
+
+Configurable: `hooks.precompact.mode = "cleanup"` (default) clears the tracking. `"off"` preserves the tracking across compaction (useful if you compact frequently and don't want to re-prompt every time).
+
+## post-checkout git hook
 
 **File:** `scripts/hooks/post-checkout.sh`
 **Installed to:** `.git/hooks/post-checkout`
 
-Fires after `git checkout` or `git pull` (branch checkout only, not file checkout). Runs `MemorySync.syncFromGit()` to rebuild the SQLite cache from JSON memory files. This keeps the cache in sync when switching branches or pulling changes from teammates.
-
-**Performance:** Targets under 500ms for 100 files. Runs in the background with a 2-second timeout. Never blocks git operations (always exits 0).
+Fires after `git checkout` or `git pull` (branch checkout, not file checkout). Runs `MemorySync.syncFromGit()` to rebuild the SQLite cache from JSON memory files. Targets under 500ms for 100 files; runs in the background with a 2-second timeout; never blocks git operations.
 
 ## Session-scoped tracking
 
-All recall tracking is session-scoped via `session_id` (available in hook stdin JSON). Each session gets its own tracking file at `.aide/cache/recalled-paths-{session_id}.txt`. This means:
+All recall tracking is session-scoped via `session_id` (from hook stdin JSON). Each session gets its own tracking file at `.aide/cache/recalled-paths-{session_id}.txt`:
 
 - Different sessions (e.g., multiple terminal tabs) track independently
 - SessionStart cleans up stale tracking files from ended sessions
@@ -115,10 +140,10 @@ All recall tracking is session-scoped via `session_id` (available in hook stdin 
 
 ## Disabling individual hooks
 
-Each hook can be disabled independently via config. (The old `capture.*` family was removed in 0.4.3 in favor of the more specific `hooks.*` controls.)
+Each hook can be disabled or tuned independently:
 
 ```bash
-# Disable the stop-hook reflection prompt (effectively)
+# Silence the Stop reflection prompt (effectively, by setting a huge interval)
 aide-memory config hooks.stop.schedule '[{"every":100}]'
 
 # Disable correction detection
@@ -127,42 +152,45 @@ aide-memory config hooks.correction.enabled false
 # Disable the file-read nudge and blocking
 aide-memory config hooks.read.maxBlocks 0
 
-# Disable file-edit nudge and blocking
+# Disable the file-edit nudge and blocking
 aide-memory config hooks.edit.maxBlocks 0
 
-# Disable pre-compact cleanup (preserve tracking across /compact)
+# Preserve tracking across compaction (don't re-prompt every /compact)
 aide-memory config hooks.precompact.mode off
 
-# Silence the pre-search nudge
+# Silence the pre-search nudge entirely
 aide-memory config hooks.search.mode off
+
+# Hard-block grep on a search-relevant query (instead of soft default)
+aide-memory config hooks.search.mode block
 ```
 
-## Claude Code vs Cursor differences
+Or hide the user-facing `aide-memory · ...` lines while keeping all hook behavior:
 
-Both editors receive the same hook content, but the delivery mechanism differs:
+```bash
+aide-memory config hooks.visible false
+```
 
-**Claude Code:**
-- Hooks use `hookSpecificOutput.additionalContext` to inject context
-- Branded `aide-memory · ...` lines render inline via `systemMessage` for both hard and soft fires
-- Stop hook uses `{"decision": "block"}` to prevent the first stop
+## Per-editor delivery differences
 
-**Cursor:**
-- Hooks use `agent_message` for soft context and hard-block payloads
-- `user_message` chrome renders inline on hard-block (`permission: "deny"`); soft fires (`permission: "allow"`) put `user_message` in the Hooks Output panel rather than chat
-- Rules file uses `.mdc` format with YAML frontmatter (`alwaysApply: true`); session-start content ships via the rules file rather than the broken `sessionStart.additional_context` channel
+Both editors get the same hook content; the channel differs.
 
-Both get the same rules file content (generated from templates during `aide-memory init`). The rules file teaches the agent when to call each MCP tool and how to format memories.
+**Claude Code:** `hookSpecificOutput.additionalContext` for soft nudges; `decision: "block"` + `reason` for hard blocks; `systemMessage` for the user-visible `aide-memory · ...` chrome inline in chat. SessionStart fires natively. SessionStart re-fires after compaction.
+
+**Cursor:** `agent_message` for soft nudges; `permission: "deny"` for hard blocks; `user_message` for inline chrome on hard-block (Cursor 3.2.11 renders this in chat on deny but not on allow); `followup_message` for Stop nudges. SessionStart content ships via the regenerated `.cursor/rules/aide-memory.mdc` because the native sessionStart channel is broken upstream.
+
+See [Supported Editors](/docs/supported-editors) for the full per-event mapping.
 
 ## Rules files
 
-The init command generates rules files from templates:
+`aide-memory init` writes a rules file for each supported editor. The file teaches the agent when to call each MCP tool and how to format memories.
 
-| File | Editor | Purpose |
-|------|--------|---------|
-| `.claude/rules/aide-memory.md` | Claude Code | Static template, agent instructions for when to recall/remember |
-| `.cursor/rules/aide-memory.mdc` | Cursor | Dynamically regenerated; carries the same content Claude Code gets via SessionStart, plus session-scoped data |
+| File | Editor | Format | Behavior |
+|------|--------|--------|----------|
+| `.claude/rules/aide-memory.md` | Claude Code | Markdown | Static template (Claude Code's SessionStart hook delivers dynamic content separately) |
+| `.cursor/rules/aide-memory.mdc` | Cursor | MDC (YAML frontmatter + body) | Dynamically regenerated on memory/config changes; carries the same content Claude Code's SessionStart injects |
 
-Rules files are safe to regenerate:
+Rules files are safe to regenerate at any time:
 
 ```bash
 aide-memory init --update-rules

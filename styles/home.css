@@ -1,12 +1,15 @@
+/* Brand: aide-memory CLI chrome uses cyan/teal #00c2cb (src/memory/hooks/handlers.ts).
+   Site accents matched to that color so on-page accents and CLI output share a visual language. */
+
 /* Hero */
 .hero-wrapper {
   position: relative;
-  min-height: 80vh;
+  min-height: 70vh;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: 4rem 1.5rem;
+  padding: 3.5rem 1.5rem 2rem;
 }
 
 .hero-grid {
@@ -35,7 +38,7 @@
   transform: translateX(-50%);
   width: 600px;
   height: 400px;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(0, 194, 203, 0.15) 0%, transparent 70%);
   border-radius: 50%;
   pointer-events: none;
 }
@@ -43,7 +46,7 @@
 .hero-content {
   position: relative;
   text-align: center;
-  max-width: 700px;
+  max-width: 760px;
   z-index: 1;
 }
 
@@ -51,9 +54,9 @@
   display: inline-block;
   padding: 0.35rem 1rem;
   border-radius: 999px;
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  background: rgba(99, 102, 241, 0.08);
-  color: #818cf8;
+  border: 1px solid rgba(0, 194, 203, 0.35);
+  background: rgba(0, 194, 203, 0.1);
+  color: #5fe1e6;
   font-size: 0.85rem;
   font-weight: 500;
   letter-spacing: 0.02em;
@@ -61,7 +64,7 @@
 }
 
 .hero-title {
-  font-size: 3.5rem;
+  font-size: 3.4rem;
   font-weight: 800;
   letter-spacing: -0.03em;
   line-height: 1.1;
@@ -70,17 +73,17 @@
 }
 
 .hero-highlight {
-  background: linear-gradient(135deg, #818cf8 0%, #6366f1 50%, #a78bfa 100%);
+  background: linear-gradient(135deg, #5fe1e6 0%, #00c2cb 50%, #14b8a6 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .hero-subtitle {
-  font-size: 1.2rem;
+  font-size: 1.18rem;
   color: #94a3b8;
   line-height: 1.6;
-  margin: 0 0 2rem;
+  margin: 0 0 1.75rem;
 }
 
 .hero-install {
@@ -104,23 +107,42 @@
 }
 
 .copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   background: none;
   border: none;
   color: #64748b;
   cursor: pointer;
-  padding: 4px;
+  padding: 4px 8px;
   border-radius: 4px;
-  transition: color 0.2s;
+  font-size: 0.78rem;
+  font-family: inherit;
+  transition: color 0.2s, background 0.2s;
 }
 
 .copy-btn:hover {
-  color: #818cf8;
+  color: #00c2cb;
+  background: rgba(0, 194, 203, 0.08);
+}
+
+.copy-btn-copied {
+  color: #14b8a6;
+}
+
+.copy-btn-copied:hover {
+  color: #14b8a6;
+}
+
+.copy-btn-label {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .hero-stats {
   font-size: 0.85rem;
   color: #64748b;
-  margin-bottom: 2rem;
+  margin-bottom: 1.75rem;
 }
 
 .hero-actions {
@@ -134,17 +156,17 @@
   display: inline-flex;
   align-items: center;
   padding: 0.7rem 1.5rem;
-  background: #6366f1;
-  color: white;
+  background: #00c2cb;
+  color: #062a2d;
   border-radius: 8px;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.95rem;
   text-decoration: none;
   transition: background 0.2s;
 }
 
 .btn-primary:hover {
-  background: #4f46e5;
+  background: #14b8a6;
 }
 
 .btn-secondary {
@@ -158,24 +180,92 @@
   font-weight: 600;
   font-size: 0.95rem;
   text-decoration: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, color 0.2s;
 }
 
 .btn-secondary:hover {
-  border-color: #6366f1;
+  border-color: #00c2cb;
+  color: #00c2cb;
+}
+
+/* Problem section */
+.problem-section {
+  padding: 2.5rem 1.5rem 3rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.problem-section h2 {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin: 0 0 1rem;
+  letter-spacing: -0.02em;
+}
+
+.problem-lead {
+  color: #94a3b8;
+  font-size: 1.02rem;
+  line-height: 1.65;
+  max-width: 760px;
+  margin: 0 auto 2rem;
+}
+
+.problem-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+  text-align: left;
+}
+
+.problem-card {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 1.25rem 1.4rem;
+}
+
+.problem-card h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0 0 0.5rem;
+}
+
+.problem-card p {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  line-height: 1.55;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .problem-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Features */
 .features-section {
-  padding: 4rem 1.5rem;
+  padding: 2.5rem 1.5rem 3rem;
   max-width: 1100px;
   margin: 0 auto;
+}
+
+.section-heading {
+  text-align: center;
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin: 0 0 2rem;
+  letter-spacing: -0.02em;
 }
 
 .features-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
 @media (max-width: 768px) {
@@ -183,7 +273,7 @@
     grid-template-columns: 1fr;
   }
   .hero-title {
-    font-size: 2.5rem;
+    font-size: 2.3rem;
   }
 }
 
@@ -191,52 +281,62 @@
   background: #1e293b;
   border: 1px solid #334155;
   border-radius: 12px;
-  padding: 1.5rem;
-  transition: border-color 0.2s;
+  padding: 1.4rem 1.4rem 1.5rem;
+  transition: border-color 0.2s, transform 0.2s;
 }
 
 .feature-card:hover {
-  border-color: rgba(99, 102, 241, 0.4);
+  border-color: rgba(0, 194, 203, 0.45);
+  transform: translateY(-2px);
 }
 
 .feature-icon {
   font-size: 1.5rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.6rem;
 }
 
 .feature-card h3 {
   font-size: 1.05rem;
   font-weight: 700;
   color: #f1f5f9;
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.4rem;
 }
 
 .feature-card p {
   font-size: 0.9rem;
   color: #94a3b8;
-  line-height: 1.5;
+  line-height: 1.55;
   margin: 0;
+}
+
+.feature-card p code {
+  color: #5fe1e6;
+  background: rgba(0, 194, 203, 0.08);
+  padding: 0.05rem 0.35rem;
+  border-radius: 3px;
+  font-size: 0.85em;
 }
 
 /* How It Works */
 .how-section {
-  padding: 4rem 1.5rem;
+  padding: 3rem 1.5rem;
   max-width: 800px;
   margin: 0 auto;
 }
 
 .how-section h2 {
   text-align: center;
-  font-size: 2rem;
+  font-size: 1.9rem;
   font-weight: 800;
   color: #f1f5f9;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
+  letter-spacing: -0.02em;
 }
 
 .steps {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.75rem;
 }
 
 .step {
@@ -249,14 +349,14 @@
   flex-shrink: 0;
   width: 40px;
   height: 40px;
-  background: rgba(99, 102, 241, 0.15);
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  background: rgba(0, 194, 203, 0.12);
+  border: 1px solid rgba(0, 194, 203, 0.35);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  color: #818cf8;
+  color: #5fe1e6;
   font-size: 1rem;
 }
 
@@ -268,10 +368,14 @@
 }
 
 .step-content p {
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   color: #94a3b8;
-  line-height: 1.5;
+  line-height: 1.55;
   margin: 0.5rem 0 0;
+}
+
+.step-content code {
+  color: #5fe1e6;
 }
 
 .step-code {
@@ -288,8 +392,8 @@
 /* CTA */
 .cta-section {
   text-align: center;
-  padding: 4rem 1.5rem 6rem;
-  max-width: 600px;
+  padding: 3rem 1.5rem 5rem;
+  max-width: 720px;
   margin: 0 auto;
 }
 
@@ -298,6 +402,7 @@
   font-weight: 800;
   color: #f1f5f9;
   margin: 0 0 0.5rem;
+  letter-spacing: -0.02em;
 }
 
 .cta-section > p {
@@ -312,7 +417,7 @@
 }
 
 .cta-links a {
-  color: #818cf8;
+  color: #5fe1e6;
   text-decoration: none;
 }
 
@@ -334,14 +439,19 @@ html[class~="light"] .hero-title,
 html[class~="light"] .feature-card h3,
 html[class~="light"] .how-section h2,
 html[class~="light"] .step-content h3,
-html[class~="light"] .cta-section h2 {
+html[class~="light"] .cta-section h2,
+html[class~="light"] .problem-section h2,
+html[class~="light"] .problem-card h3,
+html[class~="light"] .section-heading {
   color: #0f172a;
 }
 
 html[class~="light"] .hero-subtitle,
 html[class~="light"] .feature-card p,
 html[class~="light"] .step-content p,
-html[class~="light"] .cta-section > p {
+html[class~="light"] .cta-section > p,
+html[class~="light"] .problem-lead,
+html[class~="light"] .problem-card p {
   color: #475569;
 }
 
@@ -352,11 +462,12 @@ html[class~="light"] .hero-grid {
 }
 
 html[class~="light"] .hero-wrapper::before {
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(0, 194, 203, 0.12) 0%, transparent 70%);
 }
 
 html[class~="light"] .feature-card,
-html[class~="light"] .hero-install {
+html[class~="light"] .hero-install,
+html[class~="light"] .problem-card {
   background: #f8fafc;
   border-color: #e2e8f0;
 }
@@ -374,4 +485,25 @@ html[class~="light"] .step-code {
 html[class~="light"] .btn-secondary {
   color: #1e293b;
   border-color: #e2e8f0;
+}
+
+html[class~="light"] .hero-badge {
+  color: #047278;
+  background: rgba(0, 194, 203, 0.08);
+  border-color: rgba(0, 194, 203, 0.4);
+}
+
+html[class~="light"] .step-number {
+  color: #047278;
+  background: rgba(0, 194, 203, 0.1);
+  border-color: rgba(0, 194, 203, 0.45);
+}
+
+html[class~="light"] .cta-links a {
+  color: #047278;
+}
+
+html[class~="light"] .feature-card p code {
+  color: #047278;
+  background: rgba(0, 194, 203, 0.1);
 }

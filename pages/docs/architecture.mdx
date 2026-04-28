@@ -111,11 +111,12 @@ When the agent needs context for a code area:
 
 3. Recall engine runs:
    a. Load all memories from store (no status filter, file exists = active)
-   b. Filter by scope matching against provided paths
+   b. Filter by scope matching against provided paths (with parent inheritance, so querying `src/` returns memories scoped under `src/`)
    c. If query provided, score by keyword relevance
-   d. Sort by layer priority, then relevance, then scope specificity
-   e. Cap at limit (default 20)
-   f. Record recall for analytics
+   d. Sort by **scope match first** (scoped beats project-wide), then **layer priority** (`area_context` > `technical` > `preferences` > `guidelines`), then **scope specificity** (deeper scopes rank higher) and keyword relevance
+   e. Cap at `recall.limit` (default 20)
+   f. **Layer-diversity rebalance**: when total results are below `recall.layerDiversityMinLimit` (default 5), under-represented layers swap up so each enabled layer is represented
+   g. Record recall for analytics
 
 4. Results returned grouped by layer
 ```
@@ -136,16 +137,17 @@ Parent inheritance means querying a broad path (like `src/`) returns memories sc
 
 ### Layer priority
 
-Results are sorted by layer in this order:
+Source: `src/memory/recall.ts` defines `LAYER_ORDER = ['area_context', 'technical', 'preferences', 'guidelines']`. Results are sorted by layer in that order:
 
-1. `area_context`, most specific, highest priority
+1. `area_context`, most specific (decisions for a code area), highest priority
 2. `technical`, facts about the stack
 3. `preferences`, how someone likes to work
 4. `guidelines`, team-wide principles
 
 Within the same layer, memories are ranked by:
-1. Keyword relevance (if a query was provided)
-2. Scope specificity (deeper scopes rank higher)
+1. Scope match (scoped memories beat project-wide)
+2. Keyword relevance (if a query was provided)
+3. Scope specificity (deeper scopes rank higher)
 
 ---
 
@@ -171,13 +173,28 @@ Search uses a three-tier fallback:
 
 ## Sync: git IS the sync
 
-There is no separate sync service. Git handles distribution of memory files:
+There is no separate sync service. Git handles distribution of memory files; the local SQLite cache is rebuilt automatically from those files at the right moments.
 
-1. `aide-memory init` creates `.aide/memories/` directory structure
-2. Shared memories are committed to git like any other file
-3. Personal preferences (`.aide/memories/preferences/personal/`) are gitignored
-4. The SQLite cache (`.aide/cache/`) is gitignored
-5. The `post-checkout` hook rebuilds the cache after branch switches
+**At init:**
+
+1. `aide-memory init` creates the `.aide/memories/` directory structure
+2. Personal preferences (`.aide/memories/preferences/personal/`) are gitignored
+3. The SQLite cache (`.aide/cache/`) is gitignored
+4. A `post-checkout` git hook is installed that rebuilds the cache from JSON files after every `git pull` or branch switch
+
+**During a working session:**
+
+1. The agent calls `aide_remember`, `aide_update`, or `aide_forget`
+2. The MCP server writes the JSON file under `.aide/memories/<layer>/`
+3. The same call writes a row to the local SQLite cache (so subsequent `aide_recall` / `aide_search` is fast and indexed)
+4. You commit the JSON file with the rest of your changes
+
+**When a teammate pulls:**
+
+1. `git pull` brings in the new JSON files
+2. The `post-checkout` hook fires and runs `MemorySync.syncFromGit()` which reconciles JSON to SQLite (newer-wins by `updated_at`)
+3. The teammate's next file read in the relevant area triggers the PreToolUse hook, which surfaces "N memories exist for this path" and prompts `aide_recall`
+4. The agent calls `aide_recall`, gets the newly-pulled memories from SQLite, and proceeds
 
 ### Sync operations
 
@@ -185,7 +202,7 @@ There is no separate sync service. Git handles distribution of memory files:
 |---------|----------|-------------|
 | `aide-memory sync import` | JSON → SQLite | Full rebuild. Read all JSON files, reconcile with cache. |
 | `aide-memory sync export` | SQLite → JSON | Fill gaps. Create JSON files for any SQLite-only memories. |
-| post-checkout hook | JSON → SQLite | Incremental. Only process changed files after branch switch. |
+| post-checkout hook | JSON → SQLite | Incremental. Runs after `git pull` or branch switch. |
 
 ### Conflict resolution
 

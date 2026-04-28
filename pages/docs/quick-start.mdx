@@ -1,12 +1,12 @@
 # Quick Start
 
-Install to first recall in 2 minutes.
+Install in seconds, see your first recall in under a minute.
 
 ## Prerequisites
 
-- Node.js 18 or later
-- A project directory with a `package.json` (any language works, but Node is needed to run aide-memory)
-- Git (optional, used to detect contributor name)
+- **Node.js 18 or later** for running aide-memory itself (the bundled CLI / hooks / MCP server are JavaScript). Your project's language doesn't matter; aide-memory works with any codebase.
+- **Git** is optional. If you have a git repo, aide-memory uses `git config user.name` for the contributor field, installs a `post-checkout` hook for cache sync, and gitignores the right paths.
+- A **project directory**, with or without `package.json`. aide-memory needs a directory to put `.aide/` in; that's it.
 
 ## 1. Initialize
 
@@ -16,30 +16,57 @@ From your project root:
 npx aide-memory init
 ```
 
-This creates the `.aide/` directory structure:
+Output (abridged):
+
+```
+Project initialized for aide-memory.
+Created .aide/, six hooks, MCP config, rules files for Claude Code + Cursor.
+.aide/config.json seeded with every public setting.
+```
+
+Total time: a few seconds.
+
+This creates:
 
 ```
 .aide/
-  config.json                    # Configuration
+  config.json                  # every public knob, ready to edit
+  config-reference.md          # auto-generated key/default/description listing
   memories/
     preferences/
-      personal/                  # Your personal prefs (gitignored)
-      shared/                    # Team-shared prefs
-    technical/                   # Facts about the stack
-    area_context/                # Decisions for specific code areas
-    guidelines/                  # Team-wide principles
-  cache/                         # SQLite cache (gitignored)
+      personal/                # gitignored, your private prefs
+      shared/                  # team-shared prefs
+    technical/                 # facts about the stack
+    area_context/              # decisions for code areas
+    guidelines/                # team-wide principles
+  cache/                       # SQLite cache (gitignored)
 
-.claude/rules/aide-memory.md     # Claude Code rules file
-.cursor/rules/aide-memory.mdc    # Cursor rules file
+.claude/
+  settings.json                # six-event hook registration
+  rules/aide-memory.md         # Claude Code agent instructions
+
+.cursor/
+  hooks.json                   # six-event hook registration
+  mcp.json                     # MCP server entry
+  rules/aide-memory.mdc        # dynamically-regenerated Cursor rules
+
+.mcp.json                      # MCP server entry for Claude Code
+
+.git/hooks/post-checkout       # cache rebuild after git pull
 ```
 
-It also:
-- Adds `.aide/memories/preferences/personal/` and `.aide/cache/` to `.gitignore`
-- Installs a `post-checkout` git hook to keep the SQLite cache in sync
-- Detects your contributor name from `git config user.name`
+Plus `.gitignore` entries for `.aide/cache/` and `.aide/memories/preferences/personal/`.
 
-## 2. Store your first memory
+## 2. Restart your editor
+
+aide-memory's MCP server only becomes available after the editor reads `.mcp.json` (Claude Code) or `.cursor/mcp.json` (Cursor) at session start. Both editors load these once at startup.
+
+- **Claude Code**: open a fresh session in this project (close + reopen the chat or run `/clear` and start a new session).
+- **Cursor**: **Cmd+Q** the app (don't just close the window) and reopen. Then go to **Settings → MCP**, find `aide-memory` in the list, and toggle it **ON**. Cursor disables newly-discovered MCP servers by default.
+
+You'll know it worked when the agent can call `aide_recall`, `aide_remember`, etc. without errors. The hooks fire either way, but the hook messages tell the agent to call those tools, so they need to be available.
+
+## 3. Store your first memory
 
 ```bash
 aide remember "API responses must use camelCase keys" --layer guidelines
@@ -60,7 +87,9 @@ aide remember "Dashboard uses skeleton loading, not spinners" \
   --scope "src/components/dashboard/**"
 ```
 
-## 3. Recall context
+Or just talk to your agent. When you correct it ("no, use composition here"), the UserPromptSubmit hook detects the correction and prompts the agent to call `aide_remember` for you.
+
+## 4. Recall context
 
 ```bash
 aide recall src/components/dashboard/
@@ -77,52 +106,59 @@ Recalled 2 memories for "src/components/dashboard/":
   [1] API responses must use camelCase keys
 ```
 
-Memories are returned in priority order: area_context first, then technical, preferences, guidelines. Scoped memories are ranked above project-wide ones.
+Memories are returned ranked by **scope match → layer priority (`area_context` > `technical` > `preferences` > `guidelines`) → scope specificity**.
 
-## 4. What happens automatically
+## 5. What happens automatically
 
 Once initialized, six hooks handle context capture without any manual effort:
 
-- **SessionStart**: Injects top-N preferences + guidelines + priority-always memories at session begin/resume. Also cleans up stale tracking files from ended sessions.
-- **PreToolUse**: Before your agent reads / edits / greps a file (or calls an `aide_*` MCP tool), the hook shows memory counts by layer. On first read of a file with scoped memories, it blocks until the agent calls `aide_recall`.
-- **PostToolUse**: When the agent calls `aide_recall` / `aide_remember` / `aide_search`, the hook records the recalled IDs so subsequent reads of the same path are not re-blocked.
-- **UserPromptSubmit**: When you correct the agent ("no, use X instead"), the hook detects the correction pattern and prompts the agent to store it.
-- **Stop**: When the agent finishes a turn, it is prompted to reflect and store any non-obvious decisions or discoveries.
-- **PreCompact**: Before context compaction, the agent is prompted to save important context and session tracking is cleared.
+- **SessionStart**: at session begin or resume, injects top-N preferences + guidelines + priority-always memories into the agent's starting context.
+- **PreToolUse**: before the agent reads / edits / greps a file (or calls an `aide_*` MCP tool), surfaces memory counts by layer. First read of a file with scoped memories is **blocked** until the agent calls `aide_recall`; later reads of the same file in the same session are silent or soft-nudged. Configurable.
+- **PostToolUse**: after the agent calls `aide_recall` / `aide_remember` / `aide_search`, records the recalled IDs so subsequent reads of the same path don't re-prompt.
+- **UserPromptSubmit**: when you correct the agent ("no, use X instead"), detects the correction and prompts the agent to store it.
+- **Stop**: when the agent finishes a turn, periodic reflection nudge ("anything worth remembering?") on a configurable schedule (default ramps every 3 / 5 / 10 turns).
+- **PreCompact**: before context compaction, prompts the agent to save active plans/decisions; clears session tracking so post-compact reads re-prompt cleanly.
 
-You do not need to remember to call `aide remember` manually. The hooks make capture automatic.
+## 6. Share with your team
 
-## 5. Editor-specific setup
-
-aide-memory's in-agent experience differs per editor.
-
-- **[Claude Code](/docs/editors/claude-code)**, reference implementation; branded chrome, soft nudges, in-turn correction detection all work natively.
-- **[Cursor](/docs/editors/cursor)**, **restart Cursor after `init`** so the MCP server registers (Cursor has no MCP hot-reload). Then enable the aide-memory MCP server in Cursor → Settings → MCP. See the Cursor doc for the full setup walkthrough.
-- **[Codex](/docs/editors/codex) · [Copilot](/docs/editors/copilot) · [Windsurf](/docs/editors/windsurf)**, rule-template-only at launch. Full adapters tracked as post-launch onboarding tasks.
-
-Full capability matrix across editors: [Supported editors](/docs/supported-editors).
-
-## 6. Common commands
+Memories are JSON files under `.aide/memories/`. Commit them, push them, your teammates pull them.
 
 ```bash
-# List all memories
-npx aide-memory list
+git add .aide/memories/
+git commit -m "Capture skeleton-loading decision for dashboard"
+git push
+```
 
-# Filter by layer or scope
+The `post-checkout` hook on your teammate's machine rebuilds their local SQLite cache after `git pull` so their agent sees the same context yours does, on the next file read in the relevant area.
+
+Personal preferences (`.aide/memories/preferences/personal/`) are gitignored, so personal style stays personal. Shared preferences and the other three layers travel with the repo.
+
+## 7. Common commands
+
+```bash
+# List memories
+npx aide-memory list                                 # all
 npx aide-memory list --layer preferences
 npx aide-memory list --scope "src/components/**"
 
-# Search memories
+# Search
 npx aide-memory search "composition pattern"
 
-# Delete a memory
+# Stats and recall log
+npx aide-memory stats
+npx aide-memory recall-log --limit 50
+
+# Delete
 npx aide-memory forget <memory-id>
 
-# View stats
-npx aide-memory stats
+# Reset everything (nuclear)
+rm -rf .aide/ ~/.aide/projects/
+npx aide-memory init
 ```
 
-## 7. Configuration
+## 8. Configuration
+
+Read or write any public setting:
 
 ```bash
 npx aide-memory config <key>           # read
@@ -132,42 +168,30 @@ npx aide-memory config <key> <value>   # write
 Common knobs:
 
 - `embeddings.backend`, `"auto"` (default), `"transformers"`, `"ollama"`, or `"none"`
-- `hooks.visible`, show/hide `aide-memory · ...` lines in your terminal (default `true`)
-- `hooks.read.maxBlocks`, max times per session pre-read can hard-block (`0` to disable, `1` default)
+- `hooks.visible`, show / hide `aide-memory · ...` lines in your terminal (default `true`)
+- `hooks.read.maxBlocks`, max times per session pre-read can hard-block (`0` disables, `1` default)
 - `hooks.search.mode`, `"soft"` (default), `"block"`, or `"off"` for the Grep nudge
 - `memories.softening.threshold`, below this total-memory count, hard blocks become soft nudges (default `10`)
-- `memories.defaultShared`, default `shared` value for new `preferences` memories. Per-call always overrides.
+- `memories.defaultShared`, default `shared` value for new `preferences` memories (default `true`)
 
-See the [Configuration page](/docs/configuration) for the full schema and visualized walkthroughs.
+Or just edit `.aide/config.json` directly. The JSON file is the source of truth. See the [Configuration page](/docs/configuration) for the full schema and visualized walkthroughs.
 
-## 8. Using multiple editors
+## 9. Working across editors
 
-aide-memory works with Claude Code and Cursor. Install in any project:
+aide-memory works with Claude Code and Cursor today. Install in any project:
 
 ```bash
 npx aide-memory init
 ```
 
-The same `.aide/` directory is read by both tools. Memories captured in Claude Code are available in Cursor immediately.
-
-## 9. Team sharing
-
-Commit memories to git:
-
-```bash
-git add .aide/memories/
-git commit -m "Store team patterns and preferences"
-git push
-```
-
-Team members get the memories via `git pull`. No Docker, no sync service, no authentication. Just git.
+Both editors read the same `.aide/memories/` directory. Memories captured in Claude Code are available in Cursor immediately, and vice versa.
 
 ## Next steps
 
 - [Concepts](/docs/concepts), the editor-agnostic mental model
-- [Features](/docs/features), all capabilities explained
-- [Architecture](/docs/architecture), how storage, hooks, and recall work
 - [Configuration](/docs/configuration), tune every behavior
 - [MCP Tools](/docs/mcp-tools), the seven tools your agent can call
-- [Comparison](/docs/comparison), how aide-memory stacks up against alternatives
+- [Hooks](/docs/hooks), per-hook walkthrough
+- [Supported Editors](/docs/supported-editors), capability matrix
+- [Comparison](/docs/comparison), how aide-memory differs from claude-mem and engram
 - [FAQ](/docs/faq), common questions
