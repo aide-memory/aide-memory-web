@@ -5,7 +5,7 @@ export default {
   },
   docsRepositoryBase: 'https://github.com/aide-memory/aide-memory/tree/main/docs',
   footer: {
-    content: 'AIDE Memory © 2026 — Persistent memory for AI coding agents',
+    content: 'AIDE Memory © 2026, persistent memory for AI coding agents',
   },
   darkMode: true,
   sidebar: {

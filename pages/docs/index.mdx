@@ -27,13 +27,15 @@ aide-memory solves all four: structured layers, path-scoped recall, hook-driven 
 
 ### 1. Hooks capture context automatically
 
-Four hooks fire during normal development, no manual effort required:
+Six hooks fire during normal development, no manual effort required:
 
 | Hook | When | What it does |
 |------|------|-------------|
-| **PreToolUse** | Before file reads | Nudges agent: "N memories exist for this path" (~20 tokens) |
-| **Stop** | Task completion | Prompts agent to reflect and store learnings |
+| **SessionStart** | Session begins or resumes | Injects top-N preferences + guidelines + priority-always memories |
+| **PreToolUse** | Before file reads / edits / search | Nudges agent: "N memories exist for this path" (~20 tokens) |
+| **PostToolUse** | After aide_recall / aide_remember / aide_search | Records recalled IDs so re-reads don't re-block |
 | **UserPromptSubmit** | User corrects agent | Detects corrections, stores them as scoped memories |
+| **Stop** | Task completion | Prompts agent to reflect and store learnings |
 | **PreCompact** | Before context loss | Extracts decisions before they're compacted away |
 
 ### 2. Memories are scoped to code paths
@@ -61,7 +63,7 @@ Each memory is a human-readable JSON file in `.aide/memories/`. Commit them, pus
 - **13 CLI commands**, recall, remember, update, forget, search, list, stats, recall-log, config, sync, migrate, cleanup, init
 - **6 hooks**, automatic context capture (SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop, PreCompact) with zero manual effort
 - **FTS5 search**, BM25-ranked full-text search across all memories
-- **Cross-editor**, Claude Code (full integration) and Cursor (~80% parity in 0.5.0); Codex, Copilot, and Windsurf get a rules template
+- **Cross-editor**, Claude Code (reference adapter) and Cursor (full hook + MCP wiring; some capabilities tracked against upstream Cursor platform work); Codex, Copilot, and Windsurf get a curated rules template
 - **Local-first**, SQLite + JSON files; code and memory content never leave your machine. Anonymized event tallies are sent to PostHog only when you opt in via `AIDE_TELEMETRY=on`
 
 ---
@@ -71,7 +73,14 @@ Each memory is a human-readable JSON file in `.aide/memories/`. Commit them, pus
 Ready to give your agent a memory? Head to the [Quick Start](/docs/quick-start) guide.
 
 Or explore:
+- [Concepts](/docs/concepts), the editor-agnostic mental model
 - [Features](/docs/features), all capabilities explained
+- [Configuration](/docs/configuration), tune every behavior
+- [MCP Tools](/docs/mcp-tools), the seven tools your agent can call
+- [CLI Reference](/docs/cli-reference), every CLI command
+- [Hooks](/docs/hooks), per-hook script walkthrough
+- [Supported Editors](/docs/supported-editors), capability matrix
 - [Architecture](/docs/architecture), how storage, hooks, and recall work
 - [Comparison](/docs/comparison), how aide-memory stacks up against alternatives
+- [Troubleshooting](/docs/troubleshooting), common issues
 - [FAQ](/docs/faq), common questions

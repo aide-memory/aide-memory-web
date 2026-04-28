@@ -1,0 +1,390 @@
+# Configuration
+
+aide-memory is configured via `.aide/config.json`. All keys use dot-notation and are validated against a schema.
+
+## Config file location
+
+```
+<project-root>/.aide/config.json
+```
+
+Created by `aide-memory init`. If missing or malformed, defaults are used automatically.
+
+## Full config schema
+
+```json
+{
+  "version": 1,
+  "tags": {
+    "presets": [
+      "architecture",
+      "testing",
+      "security",
+      "style",
+      "integration",
+      "config",
+      "migration",
+      "performance",
+      "api-contract"
+    ]
+  },
+  "memories": {
+    "defaultShared": true
+  },
+  "contributor": "auto",
+  "embeddings": {
+    "model": "auto",
+    "backend": "auto"
+  },
+  "updates": {
+    "check": true
+  }
+}
+```
+
+The `capture.*` and `nudge.visible` keys were removed in 0.4.3 (no runtime effect; see "Note on removed keys" below). Telemetry is configured via the `AIDE_TELEMETRY` env var (default off, opt in with `AIDE_TELEMETRY=on`); see [Telemetry](#telemetry-default-off-opt-in) below.
+
+## All config keys
+
+### Hook behavior
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `hooks.read.maxBlocks` | number | `1` | Max hard-blocks per file path per session on pre-read hook. `0` disables the hook entirely. |
+| `hooks.edit.maxBlocks` | number | `1` | Same as `hooks.read.maxBlocks` but for pre-edit. |
+| `hooks.search.mode` | string | `"soft"` | Pre-search hook mode: `"off"`, `"soft"` (additionalContext), or `"block"` (hard decision). |
+| `hooks.correction.enabled` | boolean | `true` | Detect correction phrasings in user messages (`no, use X instead`, etc.) and nudge `aide_remember`. |
+| `hooks.precompact.mode` | string | `"cleanup"` | `"off"` preserves tracking files across `/compact`; `"cleanup"` clears them so post-compact turns re-block cleanly. |
+| `hooks.stop.schedule` | array | _(see below)_ | Phased interval for Stop hook reflection nudge. Default ramps 3 then 5 then 10 turns. |
+| `hooks.visible` | boolean | `true` | Surface user-facing `aide-memory · ...` systemMessage lines when hooks fire. Set `false` to hide all aide-memory systemMessages; hooks still function (context injection + block enforcement unchanged). Does not affect what the agent sees. |
+
+### Recall + scope matching
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `recall.limit` | number | `20` | Max memories per `aide_recall` call before layer-diversity balancing. |
+| `recall.ensureLayerDiversity` | boolean | `true` | Swap under-represented layers up into results when total is below `recall.layerDiversityMinLimit`. |
+| `recall.layerDiversityMinLimit` | number | `5` | Threshold below which diversity swap applies. |
+| `recall.minScopeDepth` | number | `1` | Minimum fixed-prefix segment count for a scope to be eligible for per-file recall. Default `1` is permissive: any scope with at least 1 segment qualifies. Bump to `2`+ for stricter scoping when you have many broad scopes. Broad scopes below the threshold surface via SessionStart injection instead of per-file. See visualized breakdown below. |
+
+### SessionStart injection
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `injection.preferences` | number/`"all"`/`false` | `15` | Max preferences to inject, sorted by `recalled_count desc, updated_at desc`. |
+| `injection.excludeScopedPreferences` | boolean | `false` | If `true`, scoped preferences skip SessionStart and surface only via path hooks. |
+| `injection.technical` | number/boolean | `false` | Inject technical-layer memories at SessionStart? Default off; they surface via path hooks. |
+| `injection.area_context` | number/boolean | `false` | Same for area_context layer. |
+| `injection.guidelines` | `"all"`/number/`false` | `"all"` | Inject all guidelines regardless of scope. |
+| `injection.priorityAlwaysOverride` | boolean | `true` | Include any memory with `priority: "always"` regardless of layer gating. Rendered first so priority memories survive the char cap. |
+| `injection.maxChars` | number | `1200` | Overall character cap for the concatenated injection. Truncates with `...truncated`. |
+
+### Scope-matching visualized: `recall.minScopeDepth`
+
+Every memory has a `scope` (e.g. `src/api/**`, `packages/foo/**`, or no scope at all). When you open a file, aide-memory decides which scoped memories are "specific enough" to surface per-file vs which belong at session-start only. `recall.minScopeDepth` is the dial that controls this.
+
+Think of scopes ranked by how specific they are; more path segments equals more specific:
+
+```
+most specific  ↑   src/api/routes/**     (3 segments)
+               │   src/api/**            (2 segments)
+ less specific ↓   src/**                (1 segment)
+```
+
+The dial is a BAR: scopes above it surface per-file, scopes below it go to SessionStart instead.
+
+**Default (`minScopeDepth: 1`), permissive, works across project shapes:**
+
+```
+  src/api/routes/**     ← per-file recall ✓
+  src/api/**            ← per-file recall ✓
+  src/**                ← per-file recall ✓
+ ─────── BAR ───────
+  (nothing below)
+```
+Every scoped memory surfaces when you open a matching file. Works for `src/`-prefixed projects, flat Next.js / SvelteKit-style projects (`pages/**`, `components/**`), and monorepos (`packages/foo/**`).
+
+**`minScopeDepth: 2`, quieter, recommended when you have many broad scopes:**
+
+```
+  src/api/routes/**     ← per-file recall ✓
+  src/api/**            ← per-file recall ✓
+ ─────── BAR ───────
+  src/**                ← SessionStart only
+```
+Single-segment scopes like `src/**` are treated as "too broad for per-file" and demoted to SessionStart injection.
+
+**`minScopeDepth: 3`, strict, edge case:**
+
+```
+  src/api/routes/**     ← per-file recall ✓
+ ─────── BAR ───────
+  src/api/**            ← SessionStart only
+  src/**                ← SessionStart only
+```
+Only very-narrow scopes surface per-file.
+
+**When to change:** start with default `1`. If per-file recall feels too chatty because you have many broad scopes, bump to `2`.
+
+### Performance notes for scope and recall breadth
+
+- **`recall.limit: 20` caps per-call returns.** If a file has 30 scope-matching memories, the first `aide_recall` call returns 20. The remaining 10 stay listed in `missingIds` on the next pre-read fire, and the agent is nudged to call `aide_recall` for the next batch. Bounded pagination via id-based nudge.
+- **`memories.softening.threshold: 10` softens small projects.** Below 10 total memories, ALL pre-read/pre-edit blocks become soft additionalContext nudges.
+- **`recall.minScopeDepth` is your primary scope-breadth dial.**
+- **Scope your memories precisely when storing.** Prefer specific scopes; they feel more relevant when they surface, and don't inflate per-file recall counts for unrelated files.
+
+---
+
+### Stop-hook rhythm visualized: `hooks.stop.schedule`
+
+Default schedule ramps how often the Stop hook nudges "anything worth remembering?" based on how many turns deep you are in the session:
+
+```
+Turn:   1   2   3   4   5   6   7   8   9  10 11 12 13 14 15 16 17 18 19 20 ...
+              ▲           ▲           ▲              ▲              ▲
+            first       second       third          every-5         every-5
+             fire        fire         fire
+
+Phase 1 (turns 1-9):  every 3 turns   ← you just started, dense
+Phase 2 (turns 10-29): every 5 turns  ← mid-session, lighter
+Phase 3 (turns 30+):   every 10 turns ← long session, rare
+```
+
+**Custom schedules:**
+
+```bash
+# One-size-fits-all: every 5 turns forever
+aide-memory config hooks.stop.schedule '[{"every":5}]'
+
+# Aggressive reflection in first 20 turns, off afterwards
+aide-memory config hooks.stop.schedule '[{"until":20,"every":3},{"every":999999}]'
+
+# Basically never fire (useful for very long coding sessions)
+aide-memory config hooks.stop.schedule '[{"every":999999}]'
+```
+
+Schedule format: array of `{until, every}` phases. Missing `until` means "rest of session."
+
+---
+
+### Softening threshold visualized: `memories.softening.threshold`
+
+Default `10`. Below this total-memory count, hard-block nudges downgrade to soft nudges (so new projects don't feel hostile while you're seeding):
+
+```
+Memories in store:
+   0 ──── 5 ──── 9       10 ───── 20 ────── 50+
+   │               │     │                     │
+   └── SOFT ───────┘     └────── HARD ─────────┘
+       (empty feel)            (normal blocking)
+```
+
+- **0 memories:** pre-read/pre-edit silent
+- **1-9 memories:** `additionalContext` soft nudge only, never hard-blocks
+- **10+ memories:** hard-blocks on first touch of each file with scoped memories
+
+```bash
+# More patient: soft-only until you hit 25 memories
+aide-memory config memories.softening.threshold 25
+
+# Hard-block from memory #1 (aggressive use)
+aide-memory config memories.softening.threshold 0
+```
+
+---
+
+### SessionStart budget visualized: `injection.maxChars`
+
+Default `1200`. Sections concatenated in this order and clipped at the cap:
+
+```
+  ┌──────────────────────────────────────────────────┐
+  │ ## Always             ← priority:"always" mems   │  (renders FIRST, survives clip)
+  ├──────────────────────────────────────────────────┤
+  │ ## Session Preferences                           │
+  ├──────────────────────────────────────────────────┤
+  │ ## Technical Context  (only if injection.technical=true)
+  ├──────────────────────────────────────────────────┤
+  │ ## Area Context       (only if injection.area_context=true)
+  ├──────────────────────────────────────────────────┤
+  │ ## Guidelines                                    │
+  └──────────────────────────────────────────────────┘
+  ↑ total concatenated length ≤ injection.maxChars
+    anything over budget gets "...truncated"
+```
+
+- **1200 (default)**: typical session-start context, ~300 tokens.
+- **600**: aggressive clip; only the top few preferences + always-memories fit.
+- **2000-3000**: lets richer context through. Useful with `injection.technical=true`.
+- **Very large (10000+)**: essentially no clip; raw injection limited only by total memory count and per-layer caps.
+
+---
+
+### SessionStart layers: which layers surface at session start
+
+Defaults:
+
+```
+  Layer             Default?    Surfaces at SessionStart?
+  ─────────────────────────────────────────────────────────
+  preferences       15 (top)    ✅ top 15 most-recalled
+  guidelines        "all"       ✅ every guideline, no cap
+  technical         false       ❌ path-hooks only
+  area_context      false       ❌ path-hooks only
+  priority:"always" true        ✅ injected from any layer
+```
+
+Why preferences + guidelines default ON but technical + area_context default OFF: preferences + guidelines are "how we work" rules. Value comes from knowing them BEFORE you touch any code. Technical + area_context are "facts about this piece of code" and "decisions for this area." Value comes from knowing them WHEN you touch that area; injecting at session start for areas you won't touch is wasted tokens.
+
+```bash
+aide-memory config injection.technical all          # inject every technical memory
+aide-memory config injection.area_context 10        # inject up to 10 most-recent area_context memories
+aide-memory config injection.preferences 30         # top 30 instead of top 15
+aide-memory config injection.preferences false      # never inject preferences at session start
+aide-memory config injection.excludeScopedPreferences true   # only project-wide prefs
+```
+
+**Priority override**, any memory marked `priority: "always"` (set via `aide_remember`) is injected regardless of per-layer gating.
+
+---
+
+### Pre-search mode: `hooks.search.mode`
+
+```
+  mode = "off"    ╎ Grep runs silently. No aide-memory nudge.
+  ─────────────────────────────────────────────────────────
+  mode = "soft"   ╎ Grep proceeds, but hook attaches an
+  (default)       ╎ additionalContext: "N memories match;
+                  ╎ call aide_search for structured results."
+                  ╎ Agent can ignore or call aide_search.
+  ─────────────────────────────────────────────────────────
+  mode = "block"  ╎ Grep is hard-blocked with decision:block.
+                  ╎ Agent MUST call aide_search first.
+```
+
+Most users want `soft` (default). Use `block` if the agent repeatedly greps for things already stored as memories.
+
+---
+
+### Pre-compact mode: `hooks.precompact.mode`
+
+```
+  mode = "cleanup"   ╎ PreCompact hook clears:
+  (default)          ╎   • recalled-paths-<sid>.txt
+                     ╎   • stop-count-<sid>.txt
+                     ╎   • correction-pending-<sid>.txt
+                     ╎ → post-compact turn re-blocks cleanly; fresh state.
+  ─────────────────────────────────────────────────────────
+  mode = "off"       ╎ Tracking files preserved across /compact.
+                     ╎ → agent's post-compact memory of "files already
+                     ╎   recalled" sticks around.
+```
+
+Recommended: `cleanup`.
+
+---
+
+### Pre-read/pre-edit blocks: `hooks.read.maxBlocks` and `hooks.edit.maxBlocks`
+
+Default `1`. Setting `0` fully disables the hook (no blocks, no soft nudges, no tracking). Values 2+ behave the same as 1 in practice.
+
+---
+
+### Memory storage + scope visibility
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `memories.hideFromGrep` | boolean | `true` | Add `.aide/memories/` to an `aide-memory-managed` block in `.ignore` so grep/ripgrep skip it. Live-synced on config change. |
+| `memories.softening.threshold` | number | `10` | Below this total-memory count, pre-read/pre-edit hard blocks become soft nudges. Keeps small projects friendly. |
+| `memories.defaultShared` | boolean | `true` | Default `shared` value for new `preferences` memories when the caller doesn't pass one explicitly. `true` writes to `preferences/shared/` (committed). `false` writes to `preferences/personal/` (gitignored). Per-call `shared` always overrides. Other layers (technical, area_context, guidelines) ignore this; they're always shared. |
+
+### Integration + embeddings
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `version` | number | `1` | Config schema version |
+| `tags.presets` | string[] | _(see schema)_ | Available tag presets surfaced by `aide_remember`. |
+| `contributor` | string | `"auto"` | Contributor name attached to new memories. Default `"auto"` reads `git config user.name` at memory-creation time. |
+| `embeddings.backend` | string | `"auto"` | Semantic-search backend. Values: `"auto"` (try transformers, then ollama, then keyword-only), `"transformers"` (force local, requires optional `@huggingface/transformers` dep), `"ollama"` (force local Ollama at `localhost:11434`), or `"none"`. |
+| `embeddings.model` | string | `"auto"` | Model name for the active backend. `"auto"` uses backend defaults (`Xenova/bge-small-en-v1.5` for transformers, `nomic-embed-text` for ollama). |
+| `updates.check` | boolean | `true` | Check for new npm versions after each command (non-blocking). |
+
+> **Note on removed keys (0.4.3):** `capture.*` family and `nudge.visible` are silently ignored. Successor: `hooks.visible` for visibility, `hooks.read.maxBlocks=0` + `hooks.edit.maxBlocks=0` to disable read/edit blocking, `hooks.stop.schedule=[{"every":100}]` to effectively silence Stop, `hooks.correction.enabled=false` to disable correction detection.
+
+## Reading config
+
+```bash
+aide-memory config hooks.read.maxBlocks
+aide-memory config recall.minScopeDepth
+aide-memory config tags.presets
+```
+
+## Setting config
+
+```bash
+aide-memory config memories.defaultShared false
+aide-memory config contributor "Ahmed Meky"
+aide-memory config recall.minScopeDepth 1
+```
+
+Values are auto-parsed from strings: `"true"` / `"false"` become booleans, numeric strings become numbers, JSON arrays/objects are parsed as JSON, everything else stays a string.
+
+## Embedding configuration
+
+aide-memory supports optional semantic search via embeddings. When enabled, memories are embedded at creation time and search falls back to semantic similarity when keyword matching finds fewer than 3 results.
+
+```bash
+# Default: auto. Try transformers (if installed), then ollama, then keyword-only
+aide-memory config embeddings.backend auto
+
+# Force local Transformers.js backend
+aide-memory config embeddings.backend transformers
+aide-memory config embeddings.model Xenova/bge-small-en-v1.5
+
+# Force Ollama (requires Ollama running at localhost:11434)
+aide-memory config embeddings.backend ollama
+aide-memory config embeddings.model nomic-embed-text
+
+# Disable semantic search entirely (keyword-only)
+aide-memory config embeddings.backend none
+```
+
+`@huggingface/transformers` is in `optionalDependencies`; `npm install -g aide-memory` will attempt to install it (npm continues if it fails). Without either backend available, search uses FTS5 (BM25 ranking) with a LIKE fallback.
+
+## Telemetry (default OFF, opt-in)
+
+aide-memory has two distinct analytics surfaces:
+
+**1. Local SQLite analytics (always on, never transmitted).** Tool-call counts and recall events are written to your local SQLite cache at `~/.aide/projects/<hash>/memory.db`. This drives `aide-memory stats`. Purely local; nothing leaves your machine.
+
+**2. Anonymized event tallies to PostHog (opt-in via env var).** When you opt in by exporting `AIDE_TELEMETRY=on`, aide-memory sends anonymized event tallies to PostHog so we can see which features are used. Off by default.
+
+**What's sent when opted in:**
+- Event type (`remember`, `recall`, `search`, etc.)
+- A SHA256-hashed machine identifier (`hostname:username`) for deduplication
+- Platform (e.g. `darwin`, `linux`)
+- Node version
+
+**What's NEVER sent:** memory content, code, file paths, scope strings, project names, contributor names, query strings, search keywords, or any other user-identifying data.
+
+**Opt in:**
+```bash
+export AIDE_TELEMETRY=on
+```
+
+**Stay opted out (default):** do nothing.
+
+## Update checks
+
+aide-memory checks for new versions after each command (non-blocking). To disable:
+
+```bash
+aide-memory config updates.check false
+```
+
+## Resetting config
+
+```bash
+rm .aide/config.json
+aide-memory init
+```
