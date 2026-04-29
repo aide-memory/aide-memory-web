@@ -58,12 +58,8 @@ export default function HomePage() {
           </p>
 
           <div className="hero-install">
-            <code>npm install -g aide-memory</code>
-            <CopyButton text="npm install -g aide-memory" />
-          </div>
-          <div className="hero-install" style={{ marginTop: '0.5rem' }}>
-            <code>aide-memory init</code>
-            <CopyButton text="aide-memory init" />
+            <code>npm install -g aide-memory && aide-memory init</code>
+            <CopyButton text="npm install -g aide-memory && aide-memory init" />
           </div>
 
           <div className="hero-stats">
@@ -216,12 +212,8 @@ export default function HomePage() {
         <h2>Get started in seconds.</h2>
         <p>Free. Local-first. No account required.</p>
         <div className="hero-install" style={{ marginTop: '1.5rem' }}>
-          <code>npm install -g aide-memory</code>
-          <CopyButton text="npm install -g aide-memory" />
-        </div>
-        <div className="hero-install" style={{ marginTop: '0.5rem' }}>
-          <code>aide-memory init</code>
-          <CopyButton text="aide-memory init" />
+          <code>npm install -g aide-memory && aide-memory init</code>
+          <CopyButton text="npm install -g aide-memory && aide-memory init" />
         </div>
         <div className="cta-links">
           <Link href="/docs/quick-start">Quick Start Guide</Link>
