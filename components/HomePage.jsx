@@ -187,12 +187,20 @@ export default function HomePage() {
         <p>Occasional updates on aide-memory: new editor adapters and releases.</p>
         <form
           className="subscribe-form"
-          action="https://buttondown.com/api/emails/embed-subscribe/aide-memory"
-          method="post"
-          target="popupwindow"
           onSubmit={(e) => {
-            const win = window.open('https://buttondown.com/aide-memory', 'popupwindow')
-            if (!win) e.preventDefault()
+            e.preventDefault()
+            const email = e.target.email.value
+            fetch('/api/subscribe', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email })
+            }).then(r => {
+              if (r.ok) {
+                e.target.email.value = ''
+                e.target.email.placeholder = 'Subscribed!'
+                setTimeout(() => { e.target.email.placeholder = 'you@example.com' }, 2000)
+              }
+            })
           }}
         >
           <input type="email" name="email" placeholder="you@example.com" required />
