@@ -7,13 +7,22 @@ Install in seconds. The next time the agent reads a file with a scoped memory, t
 - **Node.js 18 or later** to run aide-memory.
 - **Git** is optional but recommended (for team sync, contributor detection, and the `post-checkout` cache rebuild). aide-memory works without it.
 
-## 1. Initialize
+## 1. Install and initialize
 
 From your project root:
 
 ```bash
+npm install -g aide-memory
+aide-memory init
+```
+
+Or try it without installing globally:
+
+```bash
 npx aide-memory init
 ```
+
+The global install is recommended because aide-memory's hooks and MCP server need to run on every session. `npx` works but the paths point to the npm cache, which can break if you switch Node versions or clean the cache.
 
 Output (abridged):
 
