@@ -1,53 +1,52 @@
-# AIDE Memory Landing Page
+# aide-memory landing page
 
-This is the official landing page for [AIDE Memory](https://aide-memory.dev) — persistent, path-scoped memory for AI coding agents.
+This is the source for [aide-memory.dev](https://aide-memory.dev), the public landing page and documentation site for aide-memory.
 
-## Quick Start
+For the actual aide-memory project, see [aide-memory/aide-memory](https://github.com/aide-memory/aide-memory).
+
+## Local development
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open http://localhost:3000 to view the site.
+Open http://localhost:3000.
 
-## Build for Production
+## Build for production
 
 ```bash
 npm run build
 npm run start
 ```
 
-## Structure
+## Pages
 
-- `pages/index.mdx` — Landing page (hero, problem, how it works)
-- `pages/docs/quick-start.mdx` — Installation and usage guide
-- `pages/docs/features.mdx` — Feature overview
-- `pages/docs/comparison.mdx` — vs claude-mem and engram
-- `pages/docs/architecture.mdx` — System architecture
-- `pages/docs/faq.mdx` — Frequently asked questions
+- `pages/index.jsx` — landing page (HomePage component)
+- `pages/docs/index.mdx` — docs overview
+- `pages/docs/quick-start.mdx` — install + first recall
+- `pages/docs/concepts.mdx` — mental model
+- `pages/docs/features.mdx` — capability cheat sheet
+- `pages/docs/configuration.mdx` — every public config knob
+- `pages/docs/reference.mdx` — MCP tools + CLI commands side-by-side
+- `pages/docs/hooks.mdx` — per-hook walkthrough
+- `pages/docs/supported-editors.mdx` — editor capability matrix
+- `pages/docs/editors/{claude-code,cursor,codex,copilot,windsurf}.mdx`
+- `pages/docs/architecture.mdx` — internals
+- `pages/docs/troubleshooting.mdx`
+- `pages/docs/comparison.mdx` — aide-memory vs claude-mem vs engram
+- `pages/docs/faq.mdx`
 
-## Theme
-
-The site uses [Nextra](https://nextra.site/) with the docs theme and dark mode enabled by default.
+Built with [Nextra](https://nextra.site/) (docs theme, dark mode by default).
 
 ## Deployment
 
-The site is configured for deployment to Vercel:
+Vercel auto-deploys on push to `main`. Branch protection requires PRs for any change to main.
 
-```bash
-git push
-```
+## Contributing
 
-Vercel will automatically build and deploy on push.
-
-Alternatively, use any Node.js hosting:
-
-```bash
-npm run build
-npm run start
-```
+Bug reports and small content corrections welcome via PR. Open an issue first for substantive changes.
 
 ## License
 
-Content is CC-BY-4.0. Code is FSL, auto-converting to Apache 2.0 after 2 years.
+aide-memory itself is proprietary freeware (free to use, source not public). The website content in this repo is part of the same project's documentation surface.
