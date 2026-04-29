@@ -4,7 +4,7 @@ Install in seconds. The next time the agent reads a file with a scoped memory, t
 
 ## Prerequisites
 
-- **Node.js 20 or later** to run aide-memory.
+- **Node.js 18 or later** to run aide-memory.
 - **Git** is optional but recommended (for team sync, contributor detection, and the `post-checkout` cache rebuild). aide-memory works without it.
 
 ## 1. Initialize
@@ -116,7 +116,7 @@ Once initialized, six hooks handle context capture without any manual effort:
 - **PostToolUse**: after the agent calls `aide_recall` / `aide_remember` / `aide_search`, records the recalled IDs so subsequent reads of the same path don't re-prompt.
 - **UserPromptSubmit**: when you correct the agent ("no, use X instead"), detects the correction and prompts the agent to store it.
 - **Stop**: when the agent finishes a turn, periodic reflection nudge ("anything worth remembering?") on a configurable schedule (default ramps every 3 / 5 / 10 turns).
-- **PreCompact**: before context compaction, prompts the agent to save active plans/decisions; clears session tracking so post-compact reads re-prompt cleanly.
+- **PreCompact**: before context compaction, clears session tracking so post-compact reads re-prompt cleanly.
 
 ## 6. Share with your team
 
