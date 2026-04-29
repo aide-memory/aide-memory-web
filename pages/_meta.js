@@ -8,5 +8,6 @@ export default {
       pagination: false
     }
   },
-  'docs': 'Documentation'
+  'docs': 'Documentation',
+  'blog': 'Blog'
 }
