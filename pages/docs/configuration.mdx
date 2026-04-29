@@ -67,6 +67,7 @@ You can also `cat .aide/config-reference.md` for an auto-generated reference of 
 | `contributor` | string | `"auto"` | Contributor name attached to new memories. Default `"auto"` reads `git config user.name` at memory-creation time. Override with a team handle if you want all stored memories under a single name. |
 | `embeddings.backend` | `"auto" \| "transformers" \| "ollama" \| "none"` | `"auto"` | Semantic-search backend. `"auto"` tries transformers (if installed), then ollama, then keyword-only. `"none"` disables semantic supplement. |
 | `embeddings.model` | string | `"auto"` | Model name. `"auto"` uses backend defaults (`Xenova/bge-small-en-v1.5` for transformers, `nomic-embed-text` for ollama). |
+| `telemetry.enabled` | boolean | `true` | Controls both local SQLite analytics and PostHog remote telemetry. Set `false` to disable all telemetry. The `AIDE_TELEMETRY=off` env var also works and takes precedence if set. |
 | `updates.check` | boolean | `true` | Check for new npm versions after each command (non-blocking). |
 
 ---
