@@ -58,8 +58,8 @@ export default function HomePage() {
           </p>
 
           <div className="hero-install">
-            <code>npx aide-memory init</code>
-            <CopyButton text="npx aide-memory init" />
+            <code>npm install -g aide-memory && aide-memory init</code>
+            <CopyButton text="npm install -g aide-memory && aide-memory init" />
           </div>
 
           <div className="hero-stats">
@@ -160,7 +160,7 @@ export default function HomePage() {
             <div className="step-number">1</div>
             <div className="step-content">
               <h3>Init</h3>
-              <code className="step-code">npx aide-memory init</code>
+              <code className="step-code">npm install -g aide-memory && aide-memory init</code>
               <p>Creates <code>.aide/</code>, installs six hooks, configures the MCP server, writes Claude Code + Cursor rules files. Seconds.</p>
             </div>
           </div>
@@ -212,8 +212,8 @@ export default function HomePage() {
         <h2>Get started in seconds.</h2>
         <p>Free. Local-first. No account required.</p>
         <div className="hero-install" style={{ marginTop: '1.5rem' }}>
-          <code>npx aide-memory init</code>
-          <CopyButton text="npx aide-memory init" />
+          <code>npm install -g aide-memory && aide-memory init</code>
+          <CopyButton text="npm install -g aide-memory && aide-memory init" />
         </div>
         <div className="cta-links">
           <Link href="/docs/quick-start">Quick Start Guide</Link>

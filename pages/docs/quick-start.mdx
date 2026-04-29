@@ -145,23 +145,23 @@ Personal preferences (`.aide/memories/preferences/personal/`) are gitignored, so
 
 ```bash
 # List memories
-npx aide-memory list                                 # all
-npx aide-memory list --layer preferences
-npx aide-memory list --scope "src/components/**"
+aide-memory list                                 # all
+aide-memory list --layer preferences
+aide-memory list --scope "src/components/**"
 
 # Search
-npx aide-memory search "composition pattern"
+aide-memory search "composition pattern"
 
 # Stats and recall log
-npx aide-memory stats
-npx aide-memory recall-log --limit 50
+aide-memory stats
+aide-memory recall-log --limit 50
 
 # Delete
-npx aide-memory forget <memory-id>
+aide-memory forget <memory-id>
 
 # Reset everything (nuclear)
 rm -rf .aide/ ~/.aide/projects/
-npx aide-memory init
+aide-memory init
 ```
 
 ## 8. Configuration
@@ -169,8 +169,8 @@ npx aide-memory init
 Read or write any public setting:
 
 ```bash
-npx aide-memory config <key>           # read
-npx aide-memory config <key> <value>   # write
+aide-memory config <key>           # read
+aide-memory config <key> <value>   # write
 ```
 
 Common knobs:
@@ -189,7 +189,7 @@ Or just edit `.aide/config.json` directly. The JSON file is the source of truth.
 aide-memory works with Claude Code and Cursor today. Install in any project:
 
 ```bash
-npx aide-memory init
+aide-memory init
 ```
 
 Both editors read the same `.aide/memories/` directory. Memories captured in Claude Code are available in Cursor immediately, and vice versa.
