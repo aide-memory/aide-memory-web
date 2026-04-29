@@ -6,20 +6,9 @@ Common issues and how to resolve them.
 
 ## "No .aide/ directory found"
 
-**Symptom:** Any CLI command fails with:
-```
-No .aide/ directory found. Run `aide-memory init` first.
-```
+**Symptom:** A CLI command (other than `init`) fails with `No .aide/ directory found. Run aide-memory init first.`
 
-**Cause:** You are running a command in a directory that has not been initialized, or you are in a subdirectory and the CLI cannot find `.aide/` by walking up.
-
-**Fix:** Run `aide-memory init` from your project root:
-```bash
-cd /path/to/your/project
-aide-memory init
-```
-
-The CLI walks up from the current directory looking for `.aide/`. If your project root is above the current directory, the command should still work. If it does not, run from the actual project root.
+**Fix:** Run `aide-memory init` once in the directory you want to scope as a project. That directory becomes the project root for aide-memory; all subsequent commands run from there or any subdirectory work against the same `.aide/`.
 
 ---
 
@@ -37,18 +26,12 @@ The CLI walks up from the current directory looking for `.aide/`. If your projec
    ```
    Value `0` / `false` means that hook is disabled.
 
-2. **MCP server not configured in your editor.** Ensure the MCP server is registered. For Claude Code, check `.mcp.json` exists and **restart your Claude Code session** so the new MCP config is loaded (Claude Code reads `.mcp.json` once at session start). For Cursor, check `.cursor/mcp.json` exists, **restart Cursor** (Cmd+Q the app), and toggle the aide-memory MCP server ON in **Settings → MCP** (Cursor disables newly-discovered servers by default).
+2. **MCP server not picked up by your editor.** Start a fresh session (or restart the editor) so the new MCP config loads. For Claude Code, check `.mcp.json` exists. For Cursor, check `.cursor/mcp.json` exists, Cmd+Q the app and reopen, and toggle the aide-memory MCP server ON in **Settings → MCP**.
 
 3. **Rules file missing or outdated.** Regenerate:
    ```bash
    aide-memory init --update-rules
    ```
-
-4. **Build is stale (contributors only).** If you are developing aide-memory locally from a checkout (not using the published npm package), hook dispatch reads `dist/cli/aide-memory.js`. After pulling new code, rebuild:
-   ```bash
-   npm run build && npm run build:dist
-   ```
-   End users on `npm install -g aide-memory` (or `npx aide-memory`) don't need this; the published package ships pre-built bundles.
 
 ---
 
@@ -119,10 +102,9 @@ aide-memory sync import
 
 **Cursor:**
 
-1. **Cmd+Q the Cursor app** (don't just close the window) and reopen. Cursor reads `.cursor/mcp.json` on startup only; there is no hot-reload.
-2. **Toggle the aide-memory MCP server ON** in Cursor → Settings → MCP. Newly-discovered servers stay disabled by default.
+1. **Cmd+Q the Cursor app** (don't just close the window) and reopen so it picks up the new MCP config.
+2. **Toggle the aide-memory MCP server ON** in Cursor → Settings → MCP.
 3. **Check `.cursor/rules/aide-memory.mdc` exists** with `alwaysApply: true` in the frontmatter. If missing or stale: `aide-memory init --update-rules`.
-4. **Cursor delivers hook responses on different channels** (`agent_message` for soft, `permission: "deny"` for hard-block, `followup_message` for Stop). The rules file template handles this; you don't need to do anything specific.
 
 See the [Cursor editor page](/docs/editors/cursor) for the full UX walkthrough and the [Claude Code editor page](/docs/editors/claude-code) for the reference setup.
 

@@ -1,8 +1,8 @@
 # Concepts: the aide-memory mental model
 
-aide-memory is the layer between your editor's hooks, your agent's MCP tools, and the persistent knowledge of your codebase. It captures decisions, preferences, and technical context as they happen, surfaces only what's relevant for the file the agent is touching, and shares with your teammates over git.
+aide-memory is a persistent memory layer for AI coding agents. It captures decisions, preferences, and technical context as you work, surfaces them when the agent is in the relevant area, and shares them with your teammates over git.
 
-This page is the editor-agnostic mental model. For runtime UX inside a specific tool see the [Supported Editors](/docs/supported-editors) page; for config keys see [Configuration](/docs/configuration); for the tools your agent calls and the CLI commands you run see [Reference](/docs/reference).
+This page is the editor-agnostic mental model. For runtime UX inside a specific tool see [Supported Editors](/docs/supported-editors); for config keys see [Configuration](/docs/configuration); for the MCP tools and CLI commands see [Reference](/docs/reference).
 
 ---
 
@@ -13,7 +13,7 @@ Most coding agents already work with two kinds of context:
 - **Editor-level rules** (CLAUDE.md, .cursorrules) carry always-on guidance, project conventions, and reference info that should be available on every turn. They're a single flat document, no scoping, no categorization.
 - **Skills / sub-agents** carry procedures the agent can invoke for specific tasks.
 
-aide-memory adds a third surface: **dynamic, scoped, categorized knowledge that grows with the code, captured automatically and surfaced only when the agent is in the relevant area.** Rules cover always-on guidance; skills cover procedures; aide-memory covers what those two don't.
+aide-memory adds a third surface: **dynamic, scoped, categorized knowledge that grows with the code, captured automatically and recalled when the agent is in the relevant area.** Rules cover always-on guidance; skills cover procedures; aide-memory covers what those don't, the dynamic, area-specific decisions and preferences and team conventions that build up over time.
 
 The three coexist. aide-memory doesn't replace your CLAUDE.md or your skills. The mental model:
 
@@ -33,16 +33,16 @@ Layers separate **how** the knowledge is used. Recall and injection are prioriti
 
 | Layer | Use when | Example |
 |---|---|---|
-| `preferences` | How a contributor likes to work | "When implementing pagination, prefer cursor-based over offset-based for queries that may grow unbounded" |
-| `technical` | Facts about the stack not obvious from code | "Production rate limit on the public endpoints is 60 req/min per IP, enforced at the edge before the app sees it" |
-| `area_context` | Decisions and context for specific code areas | "The billing module migrated to event-sourced state in Q1; new code should append events, never mutate balances directly" |
-| `guidelines` | Team-wide or project-wide principles | "Errors that cross the public API boundary must include a stable machine-readable code, not just a message" |
+| `preferences` | How an individual contributor likes to structure code | "I write component files as `Component/index.tsx` + `Component/Component.test.tsx`, never co-located in the parent dir" |
+| `technical` | Facts about the stack not obvious from code | "Apollo client uses persisted query hashes; raw queries 404 in prod" |
+| `area_context` | Decisions and context for a specific code area | "The billing module is event-sourced; new code appends events, never mutates balances directly" |
+| `guidelines` | Team-wide or project-wide principles | "Public API responses use `{error: {code, message}}` envelopes for any non-2xx status" |
 
 `preferences` further splits into `personal/` (gitignored) and `shared/` (committed). The other three layers are team-visible by default.
 
-## 3. Scopes (relative-to-project glob patterns)
+## 3. Scopes
 
-Every memory can carry a `scope`, a glob pattern describing which code area it applies to. **Scopes are relative to your project root** so the same memory works on every machine that pulls it from git. Examples:
+Every memory can carry a `scope`, a glob pattern describing which code area it applies to. Scopes are relative to your project root. Examples:
 
 - `src/auth/**` matches the auth module across machines
 - `packages/api/server/**` matches a monorepo subpackage
@@ -120,7 +120,7 @@ For conceptual searches ("where do we handle auth tokens?"), prefer `aide_search
 
 - **No LLM calls of its own.** The model in your editor does the reasoning. aide-memory is a typed store, hook dispatcher, and MCP server. No extra inference cost.
 - **No background distillation.** Memories are exactly what you (or the agent on your behalf) wrote. If you want a memory to read differently, edit the file or call `aide_update`. Future enhancements may add summarization, but that's not what's shipping today.
-- **No remote storage.** Memory content lives on your disk. Telemetry is opt-in: until you set `AIDE_TELEMETRY=on`, aide-memory makes zero telemetry network calls.
+- **No remote storage.** Memory content lives on your disk. Anonymized usage counts ship to PostHog by default; disable with `AIDE_TELEMETRY=off`.
 
 ---
 

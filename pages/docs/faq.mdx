@@ -10,7 +10,7 @@ Yes. Free to use. More features coming. Source is not public; aide-memory is **p
 
 Yes. aide-memory ships with full hook + MCP wiring for both Claude Code and Cursor. The `init` command writes rules files for both editors and configures the MCP server. The same `.aide/memories/` directory is read by both tools. Memories captured in Claude Code are available in Cursor immediately, and vice versa.
 
-After `init`, **restart your editor** so it picks up the new MCP server (both editors read MCP config at session start, not live). On Cursor, also enable the aide-memory MCP server in **Settings → MCP** since Cursor disables newly-discovered MCP servers by default.
+After `init`, **start a fresh session in your editor** (or restart it) so the MCP server registers. On Cursor, also enable the aide-memory MCP server in **Settings → MCP**.
 
 ## Is it good for teams?
 
@@ -73,7 +73,7 @@ Or commit to a shared git repo and pull in other projects.
 
 ## What happens if two team members edit the same memory?
 
-Git handles merges. If both edits are to the same memory file, you'll get a merge conflict. Resolve it manually:
+Each memory is its own JSON file, so two teammates adding new memories never collide; both files land cleanly via git. The only conflict path is when both teammates edit the **same** memory file, in which case git surfaces a normal text merge conflict that you resolve like any other:
 
 ```bash
 git status
@@ -82,27 +82,27 @@ git add .
 git commit -m "Resolve memory conflict"
 ```
 
-aide-memory's sync logic resolves cache vs file disagreements by `updated_at` timestamp (newer wins), but for git merges, the file-level conflict is yours to resolve like any other text file.
+aide-memory's own sync logic (cache vs file disagreement) resolves by `updated_at` timestamp; git merges are yours.
 
 ## Does aide-memory work offline?
 
 Yes. Everything runs locally. No API calls, no cloud services, no authentication. Works offline from day one.
 
-## Can I migrate from claude-mem or engram?
+## Can I migrate from claude-mem, engram, or my existing CLAUDE.md / .cursorrules?
 
-aide-memory uses a different storage format (JSON files vs vector DB / typed stores). Manual migration is not yet supported. We recommend starting fresh with aide-memory in your project.
+For existing markdown rules files, `aide_import` can pull bullet lists or numbered items into a layer of your choice (the agent calls it; you pass the markdown content + target layer). It hasn't been exercised end-to-end against every flavor of competitor export, so treat it as best-effort for now and [open an issue](https://github.com/aide-memory/aide-memory/issues) if you hit something.
 
-If you have specific use cases, file an issue on GitHub.
+For claude-mem and engram, there's no automated migration today; the storage formats differ enough (vector DB / typed stores vs JSON files) that a clean translation needs more work. Starting fresh with aide-memory and letting hooks capture as you go is the recommended path.
 
 ## Does aide-memory replace CLAUDE.md / .cursorrules / skills?
 
-No. aide-memory complements them. CLAUDE.md and .cursorrules sit at the editor-config layer for static, project-wide guidance. aide-memory adds **dynamic, scoped, layered, auto-captured** memory on top. Both coexist. The `init` command writes its own rules files (`.claude/rules/aide-memory.md` and `.cursor/rules/aide-memory.mdc`) that teach the agent when to call each MCP tool; your existing rules files keep doing their job.
+No. aide-memory complements them. CLAUDE.md and .cursorrules cover static, always-relevant project guidance. Skills cover procedures. aide-memory adds **dynamic, scalable, scoped, layered, auto-captured and auto-recalled** memory on top. The three coexist; aide-memory doesn't sit above or below the others.
 
-Skills / sub-agents still trigger as configured. The mental model: rules files cover always-on guidance, skills cover procedures, aide-memory covers the dynamic scoped knowledge that grows with the code. The three coexist; aide-memory doesn't sit above or below the others.
+The `init` command writes its own rules files (`.claude/rules/aide-memory.md` and `.cursor/rules/aide-memory.mdc`) that teach the agent when to call each MCP tool; your existing rules files keep doing their job alongside.
 
 ## Does aide-memory cost extra inference money?
 
-No. aide-memory is a typed store + dispatcher + MCP server. It does **no LLM calls of its own**. The agent in the editor you already use does all the reasoning, no extra inference cost. The seven MCP tool descriptors fit comfortably in any agent's tool budget.
+aide-memory itself does **no LLM calls** of its own; the model in your editor handles the reasoning. The cost surface is the tokens the agent spends on the seven MCP tool descriptors plus whatever it pulls back from `aide_recall` / `aide_search`. The descriptors are designed to be small, the recall payloads are scoped to the file the agent opened, and the SessionStart injection is capped by `injection.maxChars` (default 1200 chars). Net: aide-memory is built to cost less per turn than dumping a flat rules file every turn, but if you store thousands of broadly-scoped memories with narrow caps, your token usage will go up. Tune via `injection.maxChars` and `recall.minScopeDepth` if it matters.
 
 ## How do I report a bug?
 
@@ -128,7 +128,7 @@ Relative, by convention and design. A scope like `src/auth/**` is interpreted re
 
 ## Will aide-memory drift like a rules file does?
 
-That's a real risk we're working to mitigate. Today, the rules file written at init nudges the agent to call `aide_remember` when corrections or decisions surface, and the Stop hook periodically prompts a reflection. Both help capture stay current. As use grows, we plan to add tooling to surface stale memories (low recall count, last-updated long ago) and prompt the team to re-evaluate or `aide_forget`. If you have a specific drift scenario you're worried about, file an issue.
+It's a real risk that any memory layer faces. Today, the rules file written at init nudges the agent to call `aide_remember` (and `aide_update` when something has changed) at corrections and decisions, and the Stop hook periodically prompts a reflection. That keeps capture current as work happens. We'll see how drift plays out at scale and consider richer drift-mitigation tooling if it shows up as a real problem in practice. If you hit a specific drift scenario, [open an issue](https://github.com/aide-memory/aide-memory/issues).
 
 ## How does path scoping work exactly?
 
@@ -251,6 +251,6 @@ npx aide-memory config hooks.visible false
 
 ## Can I use aide-memory without git?
 
-Yes. aide-memory works in any project, git or not. Memories are stored locally in `.aide/`. You just won't get automatic team sync without git, and the `post-checkout` rebuild hook isn't installed.
+Yes. aide-memory works in any project, git or not. Memories are stored locally in `.aide/` either way. Without git, you don't get automatic team sync and the `post-checkout` rebuild hook isn't installed; everything else (capture, recall, search, layers, scoping) works the same. If you hit something that doesn't, [open an issue](https://github.com/aide-memory/aide-memory/issues).
 
 To sync manually between machines, copy the `.aide/` directory.

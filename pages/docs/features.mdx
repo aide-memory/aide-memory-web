@@ -12,18 +12,18 @@ A scannable cheat sheet of what's in the box. For the mental model behind these,
 - **Cross-editor** (Claude Code + Cursor; more in flight)
 - **Free** for individuals; potential team/pro tiers later
 
-## Capture (hooks)
+## Capture
 
 Six hooks fire automatically in your editor:
 
 - **SessionStart**, injects top-N preferences + guidelines + priority-always memories
-- **PreToolUse**, blocks first read of a file with scoped memories until `aide_recall` runs; soft-nudges thereafter; configurable per-mode
+- **PreToolUse**, blocks first read of a file with un-recalled scoped memories until `aide_recall` runs; soft-nudges thereafter; tunable per-mode
 - **PostToolUse**, records what was recalled so re-reads don't re-prompt
 - **UserPromptSubmit**, detects correction patterns and prompts the agent to call `aide_remember`
-- **Stop**, periodic "anything worth remembering?" reflection nudge on a configurable schedule (default: every 3 / 5 / 10 turns ramp)
-- **PreCompact**, prompts the agent to save active plans/decisions before compaction; clears session tracking so post-compact reads re-prompt cleanly
+- **Stop**, periodic "anything worth remembering?" reflection on a tunable schedule (default ramps every 3 → every 5 → every 10 turns by session length)
+- **PreCompact**, clears session tracking so post-compact reads re-prompt cleanly
 
-## Recall (path-scoped + layered)
+## Recall
 
 - Glob scopes with **inheritance**: `src/auth/**` covers everything under it; querying `src/` matches sub-scoped memories
 - **Layer priority**: `area_context` > `technical` > `preferences` > `guidelines`
@@ -32,7 +32,7 @@ Six hooks fire automatically in your editor:
 - **Bounded pagination**: `recall.limit` (default 20) caps per-call returns; remaining IDs nudge the agent to fetch the next batch
 - **`recall.minScopeDepth` dial**: tune which scopes qualify for per-file recall vs SessionStart-only
 
-## Search (keyword + optional semantic)
+## Search
 
 - **FTS5 BM25** keyword search across `what` and `why` fields
 - **LIKE fallback** when FTS5 is unavailable
@@ -41,7 +41,7 @@ Six hooks fire automatically in your editor:
   - Local Ollama server (`http://localhost:11434`)
   - No extra setup if you don't want semantic; keyword search works fine on its own
 
-## Storage (file-per-memory + SQLite cache)
+## Storage
 
 - One JSON file per memory under `.aide/memories/<layer>/`
 - `.aide/memories/preferences/personal/` is gitignored
@@ -49,7 +49,7 @@ Six hooks fire automatically in your editor:
 - Local SQLite cache at `~/.aide/projects/<hash>/memory.db` (WAL mode), rebuildable from the JSON files
 - `post-checkout` git hook rebuilds the cache after `git pull` or branch switch
 
-## Sync (git)
+## Sync
 
 - `git add .aide/memories/` then commit and push
 - Teammates `git pull` and the post-checkout hook rebuilds their cache
@@ -64,9 +64,9 @@ Six hooks fire automatically in your editor:
 
 See [Supported Editors](/docs/supported-editors) for the full capability matrix.
 
-## Configurable everything
+## Configurable
 
-- **6 hook controls** (`hooks.read.maxBlocks`, `hooks.edit.maxBlocks`, `hooks.search.mode`, `hooks.correction.enabled`, `hooks.precompact.mode`, `hooks.stop.schedule`, `hooks.visible`)
+- **7 hook controls** (`hooks.read.maxBlocks`, `hooks.edit.maxBlocks`, `hooks.search.mode`, `hooks.correction.enabled`, `hooks.precompact.mode`, `hooks.stop.schedule`, `hooks.visible`)
 - **4 recall controls** (`recall.limit`, `recall.ensureLayerDiversity`, `recall.layerDiversityMinLimit`, `recall.minScopeDepth`)
 - **7 SessionStart-injection controls** (`injection.enabled`, `injection.preferences`, `injection.excludeScopedPreferences`, `injection.technical`, `injection.area_context`, `injection.guidelines`, `injection.priorityAlwaysOverride`, `injection.maxChars`)
 - **3 memory-storage controls** (`memories.hideFromGrep`, `memories.softening.threshold`, `memories.defaultShared`)
@@ -80,7 +80,7 @@ Run `aide-memory config <key>` to read, `aide-memory config <key> <value>` to se
 ## Privacy
 
 - **Code and memory content never leave your machine.**
-- Telemetry (anonymized event counts only) is **opt-in** via `AIDE_TELEMETRY=on`. Default is off.
+- Anonymized event counts ship to PostHog by default. Disable with `AIDE_TELEMETRY=off`.
 - When opted in, only the event type, a SHA256-hashed `hostname:username` for deduplication, the platform, and the Node version are sent. No memory content, file paths, query strings, or any other user-identifying data.
 
 ## Free / pricing

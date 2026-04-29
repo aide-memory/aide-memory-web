@@ -31,10 +31,10 @@ Fires before the agent reads or edits a file. The hook counts memories scoped to
 
 The hook never dumps memory content; only counts, layers, and topic keywords. The agent decides whether to call `aide_recall` to fetch actual memories.
 
-**Session-scoped behavior:**
+**Session-scoped behavior (with `hooks.read.maxBlocks: 1`, the default):**
 - **First read** of a path with un-recalled scoped memories: **blocks** until the agent calls `aide_recall`
-- **After recall**: subsequent reads of the same path are **silent** (tracking file confirms recall happened) or **soft-nudged** if new memories arrived since the last recall
-- Tracking lives at `.aide/cache/recalled-paths-{session_id}.txt`, written by the track-recall hook
+- **After recall**: subsequent reads of the same path are **silent**, or **soft-nudged** if some scoped memories still haven't been recalled (either new memories arrived since the last recall, or some IDs were left uncovered)
+- Tracking lives at `.aide/cache/recalled-paths-{session_id}.txt`
 - Directory prefix matching applies: recalling `src/auth/` covers `src/auth/middleware.ts`
 
 **All configurable:**
@@ -109,26 +109,15 @@ Disable with `aide-memory config hooks.correction.enabled false`.
 
 ## PreCompact hook
 
-**File:** `scripts/hooks/pre-compact-save.sh`
-
-Fires before manual `/compact` and auto-compact. Two behaviors:
-
-1. **Prompts the agent to save active plans/decisions** before the context window collapses:
-
-   ```
-   Context compacting. Save key decisions/constraints via aide_remember (source: hook) before they are lost. If nothing to store, stop.
-   ```
-
-2. **Clears session tracking** (`recalled-paths-<sid>.txt`, `stop-count-<sid>.txt`, `correction-pending-<sid>.txt`) so the post-compact turn re-prompts cleanly. After compaction, the agent's context no longer contains the previous tool results, so paths must be re-recalled on next read.
+Fires before manual `/compact` and auto-compact. Clears the session's tracking files (`recalled-paths-<sid>.txt`, `stop-count-<sid>.txt`, `correction-pending-<sid>.txt`) so the post-compact turn re-prompts cleanly. After compaction the agent's context no longer contains previous tool results, so paths must be re-recalled on the next read.
 
 Configurable: `hooks.precompact.mode = "cleanup"` (default) clears the tracking. `"off"` preserves the tracking across compaction (useful if you compact frequently and don't want to re-prompt every time).
 
 ## post-checkout git hook
 
-**File:** `scripts/hooks/post-checkout.sh`
 **Installed to:** `.git/hooks/post-checkout`
 
-Fires after `git checkout` or `git pull` (branch checkout, not file checkout). Runs `MemorySync.syncFromGit()` to rebuild the SQLite cache from JSON memory files. Runs in the background and never blocks git operations (always exits 0). The script's timing thresholds are tunable by editing the installed `.git/hooks/post-checkout` directly today; a config knob may come if anyone needs different behavior.
+Fires after `git checkout` or `git pull` (branch checkout, not file checkout). Rebuilds the SQLite cache from the JSON memory files. Runs in the background, never blocks git operations. Timeout can be adjusted by editing the installed `.git/hooks/post-checkout`.
 
 ## Session-scoped tracking
 

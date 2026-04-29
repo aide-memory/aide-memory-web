@@ -1,10 +1,10 @@
-# Supported editors: capability matrix
+# Supported editors
 
-aide-memory is editor-agnostic at the core: the memory store, the seven MCP tools, and the hook dispatcher are the same across every tool. Each editor integration is an **adapter** that translates aide-memory's canonical events and matchers into that editor's config shape and hook I/O contract. This page is the honest accounting of what each adapter ships today.
+aide-memory is editor-agnostic at the core: the memory store, MCP tools, and hook dispatcher are the same across every tool. Each editor integration is an **adapter** that translates aide-memory's canonical events into that editor's config shape and hook I/O contract. This page is the honest accounting of what each adapter ships today.
 
-**TL;DR.** Claude Code is the reference implementation: every feature below works there. Cursor ships with full hook + MCP wiring; a handful of capabilities are tracked against upstream Cursor platform work and will upgrade as Cursor ships the corresponding changes. Codex, Copilot, and Windsurf get a curated rules template at launch; full hook + MCP adapters for each are in flight.
+**TL;DR.** aide-memory was originally built around Claude Code and has expanded to Cursor; both have full hook + MCP wiring at `aide-memory init`. Codex, Copilot, and Windsurf ship a rules template today; broader integration may come based on user feedback. For per-editor setup and behavior, see the editor pages below.
 
-Both Claude Code and Cursor require **a one-time editor restart** after `aide-memory init` so the MCP server registers. Cursor adds a second step (toggle the aide-memory MCP server ON in Settings → MCP) since Cursor disables newly-discovered MCP servers by default.
+Both Claude Code and Cursor may need a fresh session (or editor restart) after `aide-memory init` so the MCP server registers. Cursor adds a second step: toggle the aide-memory MCP server ON in Settings → MCP.
 
 ## Legend
 

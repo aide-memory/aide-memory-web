@@ -102,12 +102,8 @@ aide-memory config injection.maxChars 400
 
 **Agent reads a file via @-attachment or Tab context and aide-memory doesn't prompt.** Expected: `@-file` attachments and Tab context pulls don't go through `preToolUse`. aide-memory's prompts are for agent-planned reads, not user-provided context.
 
-## Behavior we've noted, may improve as Cursor's platform evolves
+## Behavior we've observed during testing
 
-- Native `sessionStart.additional_context` rendering for new sessions
-- Native `additional_context` channel on `beforeSubmitPrompt` (would let correction reminders fire in-turn)
-- Native session-start re-fire after compaction
-- Inline rendering of `user_message` on `permission: "allow"` events (would put soft chrome in chat instead of the Hooks Output panel)
-- MCP server name in `beforeMCPExecution` payload (would help disambiguate same-named tools across servers)
-
-When Cursor ships any of these, aide-memory's adapter will switch to the native channel and the workaround retires.
+- Soft `user_message` chrome on `permission: "allow"` events appears in the Hooks Output panel rather than chat. The agent context arrives via `agent_message` either way.
+- `beforeSubmitPrompt` doesn't carry an additional-context channel, so correction reminders ship via the next Stop hook's `followup_message` instead of in-turn.
+- `sessionStart.additional_context` didn't appear to inject content in our tests; aide-memory ships SessionStart content via the regenerated `.cursor/rules/aide-memory.mdc` instead.

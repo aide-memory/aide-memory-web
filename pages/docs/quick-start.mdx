@@ -4,9 +4,8 @@ Install in seconds. The next time the agent reads a file with a scoped memory, t
 
 ## Prerequisites
 
-- **Node.js 20 or later** for running aide-memory itself (the bundled CLI / hooks / MCP server are JavaScript). Node 18 hit end-of-life April 2026, so 20 is the new minimum. Your project's language doesn't matter; aide-memory works with any codebase.
-- **Git** is optional. If you have a git repo, aide-memory uses `git config user.name` for the contributor field, installs a `post-checkout` hook for cache sync, and gitignores the right paths.
-- A **project directory**, with or without `package.json`. aide-memory needs a directory to put `.aide/` in; that's it.
+- **Node.js 20 or later** to run aide-memory.
+- **Git** is optional but recommended (for team sync, contributor detection, and the `post-checkout` cache rebuild). aide-memory works without it.
 
 ## 1. Initialize
 
@@ -62,7 +61,7 @@ Plus `.gitignore` entries for `.aide/cache/` and `.aide/memories/preferences/per
 aide-memory's MCP server only becomes available after the editor reads `.mcp.json` (Claude Code) or `.cursor/mcp.json` (Cursor) at session start. Both editors load these once at startup.
 
 - **Claude Code**: open a fresh session in this project (close + reopen the chat or run `/clear` and start a new session).
-- **Cursor**: **Cmd+Q** the app (don't just close the window) and reopen. Then go to **Settings → MCP**, find `aide-memory` in the list, and toggle it **ON**. Cursor disables newly-discovered MCP servers by default.
+- **Cursor**: **Cmd+Q** the app (don't just close the window) and reopen. Then go to **Settings → MCP**, find `aide-memory` in the list, and toggle it **ON**.
 
 You'll know it worked when the agent can call `aide_recall`, `aide_remember`, etc. without errors. The hooks fire either way, but the hook messages tell the agent to call those tools, so they need to be available.
 

@@ -1,8 +1,8 @@
 # aide-memory
 
-**Categorized, path-scoped, auto-captured memory for AI coding agents and teams.**
+**Categorized, path-scoped, auto-captured and recalled memory for AI coding agents and teams.**
 
-aide-memory is a typed memory store, hook layer, and MCP server that runs locally alongside your editor. It captures decisions, preferences, and technical context as they happen, surfaces only what's relevant for the file the agent is touching, and shares with your teammates over git.
+aide-memory is a typed memory store, hook layer, and MCP server that runs locally alongside your editor. It captures decisions, preferences, and technical context as they happen, recalls the right ones when the agent is in the relevant area, and shares them with your teammates over git.
 
 ```bash
 npx aide-memory init
@@ -16,11 +16,12 @@ Free. Local-first. No account required.
 
 Static rules files (CLAUDE.md, .cursorrules) and skills cover always-on guidance and procedures. They're a starting point, but a few things they don't do:
 
-- **Categorized layers and path scoping.** A team-wide guideline, a personal preference, a decision-for-this-area, and a fact about the stack all blur into one flat file. They get injected globally on every turn, even when most of it isn't relevant to the file the agent just opened.
-- **Drift across sessions.** Rules files don't always get updated when reality changes; not all area-specific context fits cleanly in one document; updates are manual.
-- **Cross-session and cross-teammate gaps.** The fix you taught your agent yesterday isn't in today's session by default. Your teammates' agents start fresh too. Some of the same things get re-learned, some of the things you learned don't reach them at all.
+- **Categorized layers and area scoping.** A team-wide guideline, a personal preference, a decision-for-this-area, and a fact about the stack all blur into one flat file. The whole file gets injected on every turn, even when most of it isn't relevant to the area the agent just opened.
+- **Drift over time.** Rules files don't always get updated when reality changes; not all area-specific context fits cleanly in one document; updates are manual.
+- **Cross-session gaps.** The fix you taught your agent yesterday isn't in today's session by default. Things get re-learned every time.
+- **Cross-teammate gaps.** When a teammate opens the same area you've been working in, their agent starts fresh too. Some of what you learned never reaches them.
 - **Tool-specific memory.** What you teach Claude Code today doesn't travel to Cursor (or whatever tool your teammate uses). Project memory should be tool-agnostic; with rules files alone, it isn't.
-- **Capture without auto-recall.** Even if you do capture corrections in a rules file, nothing prompts the agent to recall the relevant subset when it opens a file. Everything gets injected globally or nothing does.
+- **Always-on injection only.** Rules files are injected wholesale on every turn. There's no per-area, per-file recall: either the whole file lands in context every turn (overcrowding) or nothing does. There's no automatic prompt for the agent to pull a relevant subset based on what file it just opened.
 
 aide-memory addresses each of these without replacing your rules files. They coexist.
 
@@ -39,7 +40,7 @@ Six hooks fire across the session lifecycle:
 | **PostToolUse** | After `aide_recall` / `aide_remember` / `aide_search` | Records what was recalled so re-reads don't re-prompt |
 | **UserPromptSubmit** | You send a message | Detects correction patterns ("no, use X instead") and prompts the agent to call `aide_remember` |
 | **Stop** | Agent finishes a turn | Periodic reflection prompt ("anything worth remembering?") on a tunable schedule (default ramps every 3 → every 5 → every 10 turns by session length) |
-| **PreCompact** | Before context compaction | Prompts the agent to save active plans/decisions; clears session tracking so post-compact reads re-prompt cleanly |
+| **PreCompact** | Before context compaction | Clears session tracking so post-compact reads re-prompt cleanly |
 
 The rules file written at init also nudges the agent to call `aide_remember` on important corrections and decisions. Capture isn't purely hook-driven; the rules guide the agent too.
 
@@ -53,10 +54,10 @@ Recall ordering: `area_context` ranks first (most specific to a code area), then
 
 | Layer | Purpose | Example |
 |---|---|---|
-| **preferences** | How a contributor likes to work | "When implementing pagination, prefer cursor-based over offset-based for queries that may grow unbounded" |
-| **technical** | Facts about the stack not obvious from code | "Production rate limit on the public endpoints is 60 req/min per IP, enforced at the edge before the app sees it" |
-| **area_context** | Decisions for a specific code area | "The billing module migrated to event-sourced state in Q1; new code should append events, never mutate balances directly" |
-| **guidelines** | Team-wide principles | "Errors that cross the public API boundary must include a stable machine-readable code, not just a message" |
+| **preferences** | How an individual contributor likes to structure code | "I write component files as `Component/index.tsx` + `Component/Component.test.tsx`, never co-located in the parent dir" |
+| **technical** | Facts about the stack not obvious from code | "Apollo client uses persisted query hashes; raw queries 404 in prod" |
+| **area_context** | Decisions for a specific code area | "The billing module is event-sourced; new code appends events, never mutates balances directly" |
+| **guidelines** | Team-wide principles | "Public API responses use `{error: {code, message}}` envelopes for any non-2xx status" |
 
 `preferences` further splits into `personal/` (gitignored, private to you) and `shared/` (committed, team-visible). The other three layers are team-visible by default. The default of `shared` for new preferences is configurable per-project; per-call, you can always override.
 

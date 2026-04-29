@@ -1,15 +1,5 @@
 # aide-memory in Codex
 
-**Status: rules template only at launch.** aide-memory's Codex adapter ships a curated rules template (same canonical body as Claude Code and Cursor, plus Codex-specific frontmatter) but does not yet generate hook or MCP config files at `aide-memory init`.
+**Status today:** rules template only. `aide-memory init` writes a curated rules file for Codex. Hooks and MCP config aren't generated for Codex yet.
 
-## What works today
-
-- If you add aide-memory as an MCP server manually in Codex's MCP config, the seven MCP tools work identically to Claude Code.
-- The rules template is generated at init.
-- Nothing else automatic yet. No hooks, no pre-read prompts, no correction detection, no session-start injection.
-
-## What may come
-
-Full hook + MCP config generation at init may come depending on user demand. The adapter shape exists; we just want to validate against Claude Code and Cursor first before generating Codex configs that might conflict with whatever you already have set up.
-
-If you're using Codex and want the full integration, please [open an issue](https://github.com/aide-memory/aide-memory/issues) so we can prioritize. See [Supported Editors](/docs/supported-editors) for the capability summary.
+If you add aide-memory as an MCP server manually in Codex's MCP config, the seven MCP tools work like they do in Claude Code or Cursor. Beyond that, deeper integration may come based on user feedback. To request it, [open an issue](https://github.com/aide-memory/aide-memory/issues).

@@ -1,6 +1,6 @@
 # Configuration
 
-aide-memory ships with sensible defaults that capture the common case. The point of the config surface is that **every part of the flow is tunable**: if you don't like one piece (chatty per-file recall, mandatory hard-block on first read, default-shared preferences, periodic Stop nudges), you flip one knob.
+aide-memory ships with defaults aimed at a common-case workflow. Many parts of the flow are tunable: if you don't like one piece (chatty per-file recall, hard-block on first read, default-shared preferences, periodic Stop nudges), flip one knob.
 
 `aide-memory init` seeds `.aide/config.json` with every public setting visible in one place so you can see and edit every knob with your normal editor.
 
@@ -232,7 +232,7 @@ aide-memory has two distinct analytics surfaces. Don't conflate them.
 
 **2. Anonymized event tallies to PostHog (on by default, env-var to disable).** aide-memory sends anonymized event tallies (just counts, no content) to PostHog so we can see which features are used. Disable any time by setting `AIDE_TELEMETRY=off` in your environment.
 
-**What's sent when opted in:**
+**What's sent:**
 - Event type (`remember`, `recall`, `search`, etc.)
 - A SHA256-hashed `hostname:username` for deduplication
 - Platform (e.g. `darwin`, `linux`)
@@ -240,12 +240,12 @@ aide-memory has two distinct analytics surfaces. Don't conflate them.
 
 **What's never sent:** memory content, code, file paths, scope strings, project names, contributor names, query strings, search keywords, recall result content, the number of memories you have, or any other user-identifying data. The events are counts only ("a recall happened on this machine"), no payload.
 
-**Disable:**
+**To disable:**
 ```bash
 export AIDE_TELEMETRY=off
 ```
 
-**Keep on (the default):** do nothing. Anonymized event counts ship in the background; nothing else does.
+**A note on the bundled key.** The PostHog write key ships in the published bundle. This is industry standard for client-side analytics SDKs (Sentry, Mixpanel, PostHog itself all ship the project key in the client). Write keys identify a project so events route to it; they don't authorize sensitive operations.
 
 ## Update checks
 
