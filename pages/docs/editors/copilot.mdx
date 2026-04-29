@@ -1,15 +1,15 @@
 # aide-memory in GitHub Copilot
 
-**Status: rule template only at launch.** aide-memory's Copilot adapter ships a curated rule template (same canonical body as Claude Code and Cursor, plus Copilot-specific frontmatter) but does **not** yet generate hook or MCP config files at `aide-memory init`.
+**Status: rules template only at launch.** aide-memory's Copilot adapter ships a curated rules template (same canonical body as Claude Code and Cursor, plus Copilot-specific frontmatter) but does not yet generate hook or MCP config files at `aide-memory init`.
 
 ## What works today
 
-- If you add aide-memory as an MCP server manually in Copilot's MCP config, the seven MCP tools (`aide_recall`, `aide_remember`, `aide_update`, `aide_forget`, `aide_search`, `aide_memories`, `aide_import`) work identically to Claude Code.
-- The rule template is generated at init.
-- Nothing else automatic. No hooks, no pre-read blocks, no correction detection, no session-start injection.
+- If you add aide-memory as an MCP server manually in Copilot's MCP config, the seven MCP tools work identically to Claude Code.
+- The rules template is generated at init.
+- Nothing else automatic yet. No hooks, no pre-read prompts, no correction detection, no session-start injection.
 
-## What's coming
+## What may come
 
-Full hook + MCP config generation at init is in flight. Each editor adapter is a small file (template + config-shape), so adding Copilot's full integration is bounded work; we just want to validate against Claude Code and Cursor first before generating Copilot configs that might conflict with whatever you have set up.
+Full hook + MCP config generation at init may come depending on user demand. The adapter shape exists; we just want to validate against Claude Code and Cursor first before generating Copilot configs that might conflict with whatever you already have set up.
 
-If you'd like to track the work or pitch in, see [Supported Editors](/docs/supported-editors) for the capability matrix and the editor-onboarding playbook.
+If you're using Copilot and want the full integration, please [open an issue](https://github.com/aide-memory/aide-memory/issues) so we can prioritize. See [Supported Editors](/docs/supported-editors) for the capability summary.

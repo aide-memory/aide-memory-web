@@ -46,7 +46,7 @@ Each memory is stored as a single JSON file under `.aide/memories/`:
     <uuid>.json
 ```
 
-**JSON files are the source of truth.** SQLite is a rebuildable cache that provides indexing, FTS5 search, and recall statistics.
+**JSON files are the source of truth.** SQLite is a rebuildable cache that provides indexing, FTS5 search, and per-machine recall statistics.
 
 ### Why file-per-memory?
 
@@ -76,17 +76,17 @@ Each memory is stored as a single JSON file under `.aide/memories/`:
 }
 ```
 
-### SQLite cache fields (not in JSON)
+### SQLite cache fields (deliberately not in JSON)
 
-The SQLite table adds three fields that only make sense as local state:
+The SQLite table adds three fields that only make sense as per-machine state, so they're kept out of the JSON files:
 
 | Field | Description |
-|-------|-------------|
+|---|---|
 | `id` | Auto-increment row ID (not stable across cache rebuilds) |
-| `recalled_count` | How many times this memory has been recalled |
-| `last_recalled_at` | Timestamp of last recall |
+| `recalled_count` | How many times this memory has been recalled on this machine |
+| `last_recalled_at` | Timestamp of last recall on this machine |
 
-These are preserved during sync operations but not written to JSON files.
+This is intentional: recall stats are local. Your teammate's machine has their own count for the same memory, and neither version's count bleeds into git history. The JSON file (the canonical thing) carries content; the cache carries usage.
 
 ### SQLite location
 
@@ -120,6 +120,10 @@ When the agent needs context for a code area:
 
 4. Results returned grouped by layer
 ```
+
+### Scopes are relative paths
+
+Scope strings are glob patterns relative to your project root (`src/auth/**`, `packages/api/**`). This is the convention so memories work on every machine that pulls them from git: the same `src/auth/**` scope matches `src/auth/middleware.ts` regardless of where each contributor's checkout lives on disk.
 
 ### Scope matching rules
 

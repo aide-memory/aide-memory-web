@@ -1,6 +1,6 @@
 # Hooks
 
-Hooks are the core of aide-memory's capture system. The agent does not call them; the editor does. Capture happens because the editor invokes the hook at the right moment, not because anyone remembers to call a tool.
+Hooks are the core of aide-memory's capture-and-recall system. The agent does not call them; the editor does. They fire automatically at the right lifecycle moments so capture and recall happen without anyone needing to invoke them by hand. The rules file written at init also nudges the agent to call `aide_remember` when corrections or decisions surface, so capture isn't purely hook-driven.
 
 ## Overview
 
@@ -128,7 +128,7 @@ Configurable: `hooks.precompact.mode = "cleanup"` (default) clears the tracking.
 **File:** `scripts/hooks/post-checkout.sh`
 **Installed to:** `.git/hooks/post-checkout`
 
-Fires after `git checkout` or `git pull` (branch checkout, not file checkout). Runs `MemorySync.syncFromGit()` to rebuild the SQLite cache from JSON memory files. Targets under 500ms for 100 files; runs in the background with a 2-second timeout; never blocks git operations.
+Fires after `git checkout` or `git pull` (branch checkout, not file checkout). Runs `MemorySync.syncFromGit()` to rebuild the SQLite cache from JSON memory files. Runs in the background and never blocks git operations (always exits 0). The script's timing thresholds are tunable by editing the installed `.git/hooks/post-checkout` directly today; a config knob may come if anyone needs different behavior.
 
 ## Session-scoped tracking
 

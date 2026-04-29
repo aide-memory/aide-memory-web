@@ -238,7 +238,7 @@ aide-memory has two distinct analytics surfaces. Don't conflate them.
 - Platform (e.g. `darwin`, `linux`)
 - Node version
 
-**What's never sent:** memory content, code, file paths, scope strings, project names, contributor names, query strings, search keywords, or any other user-identifying data.
+**What's never sent:** memory content, code, file paths, scope strings, project names, contributor names, query strings, search keywords, recall result content, the number of memories you have, or any other user-identifying data. The events are counts only ("a recall happened on this machine"), no payload.
 
 **Opt in:**
 ```bash
@@ -246,8 +246,6 @@ export AIDE_TELEMETRY=on
 ```
 
 **Stay opted out (the default):** do nothing. Without `AIDE_TELEMETRY=on`, aide-memory never makes a telemetry network call.
-
-The PostHog write key is bundled into the published package, which is industry-standard practice for client-side analytics SDKs (Sentry, Mixpanel, PostHog itself all do this). Write keys identify a project; they don't authorize sensitive operations. They're safe to ship.
 
 ## Update checks
 

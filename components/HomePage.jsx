@@ -111,48 +111,48 @@ export default function HomePage() {
         <div className="features-grid">
           <div className="feature-card">
             <div className="feature-icon">&#x1f9e0;</div>
-            <h3>Hooks capture for you</h3>
-            <p>Six hooks fire at the right moments, on corrections, on session start, before file reads, on compaction. The agent gets prompted to recall and to remember without you typing &quot;remember this.&quot;</p>
+            <h3>Hooks prompt at the right moments</h3>
+            <p>SessionStart and PreToolUse prompt the agent to recall when memories exist for the path. UserPromptSubmit prompts to remember on corrections. Stop prompts a periodic reflection. PreCompact prompts to save before context loss.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f4cd;</div>
-            <h3>Path-scoped layered recall</h3>
-            <p>Glob scopes (<code>src/auth/**</code>, <code>packages/api/**</code>) plus four layers (preferences, technical, area context, guidelines). Only the memories that matter for the file the agent just opened.</p>
+            <h3>Path-scoped, layered recall</h3>
+            <p>Glob scopes (<code>src/auth/**</code>, <code>packages/api/**</code>) plus four categorized layers (preferences, technical, area context, guidelines). Only the memories relevant to the file the agent just opened, ordered by how specific each layer is.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f465;</div>
             <h3>Git-synced for teams</h3>
-            <p>Memories are JSON files in <code>.aide/memories/</code>. Commit them, push them, pull them. Your teammates&apos; agents pick up the lesson you stored. Personal preferences stay gitignored, shared ones travel with the repo.</p>
+            <p>Memories are JSON files in <code>.aide/memories/</code>. Scopes are relative paths so they work on every machine. Commit, push, pull, your teammates&apos; agents pick up the same memories. Private preferences are gitignored by default; per-call you can override.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f504;</div>
-            <h3>Cross-tool out of the box</h3>
-            <p>Claude Code and Cursor both supported. Same memories, same MCP tools. Switch tools mid-task and your context follows. More editor adapters in flight.</p>
+            <h3>Cross-tool memory store</h3>
+            <p>Claude Code and Cursor both read the same <code>.aide/memories/</code>. The memory source travels across tools and teammates; conversation context still belongs to the tool. More editor adapters may come depending on user feedback.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x26a1;</div>
             <h3>Nudge, don&apos;t dump</h3>
-            <p>The agent gets a small (~20 token) nudge that memories exist for the path it&apos;s about to read. It decides whether to call <code>aide_recall</code>. No 2,000-token rules file injected on every turn.</p>
+            <p>The agent gets a small (~20 token) nudge that memories exist for the path it&apos;s about to read. It decides whether to call <code>aide_recall</code>. No big rules block injected on every turn.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f6e0;</div>
-            <h3>Configurable when you need it</h3>
-            <p>Defaults capture the common case. Every hook, scope dial, injection cap, and Stop schedule is tunable. Don&apos;t like one part of the flow? Flip one knob.</p>
+            <h3>Tunable to your team&apos;s flow</h3>
+            <p>The default config captures the common case. The prompting cadence, recall scope dial, injection caps, Stop schedule, and search mode are all tunable. If one part of the flow doesn&apos;t fit, flip one knob.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f512;</div>
             <h3>Local-first, opt-in telemetry</h3>
-            <p>Memories live as JSON files in your repo plus a local SQLite cache. Code and memory content never leave your machine. Telemetry (anonymized event counts only, never content) requires you to opt in via <code>AIDE_TELEMETRY=on</code>; until you do, nothing is sent.</p>
+            <p>Memories live as JSON files in your repo plus a local SQLite cache. Code and memory content never leave your machine. Telemetry is opt-in: until you set <code>AIDE_TELEMETRY=on</code>, aide-memory makes zero telemetry network calls.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f4b0;</div>
-            <h3>Uses your existing agent</h3>
-            <p>aide-memory is a typed store + dispatcher. It does no LLM calls of its own. The agent in the tool you already pay for does all the reasoning, no extra inference cost.</p>
+            <h3>No extra inference cost</h3>
+            <p>aide-memory is a typed store, hook dispatcher, and MCP server. It does no LLM calls of its own. The model in the editor you already use does all the reasoning.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f527;</div>
-            <h3>Free forever for individuals</h3>
-            <p>Proprietary freeware. Free to use today. Future enhancements may stay free or ship as paid team / pro tiers; the core memory engine stays free for solo developers.</p>
+            <h3>Free for individuals today</h3>
+            <p>Proprietary freeware: free to use today. Future enhancements may stay free, or some may ship as separate tiers as the project grows.</p>
           </div>
         </div>
       </div>
@@ -172,7 +172,7 @@ export default function HomePage() {
             <div className="step-number">2</div>
             <div className="step-content">
               <h3>Work normally</h3>
-              <p>You and your agent talk like usual. When you correct it, the hook prompts the agent to store the correction. When the agent finishes a turn, it gets a periodic nudge to reflect on what was decided. When a session starts, your top preferences and guidelines inject automatically.</p>
+              <p>You and your agent talk like usual. When you correct it, the UserPromptSubmit hook prompts the agent to store the correction. The Stop hook periodically prompts the agent to reflect on what was decided in this turn. The rules file written at init also nudges the agent to call <code>aide_remember</code> on important decisions, so capture isn&apos;t purely hook-driven.</p>
             </div>
           </div>
           <div className="step">
@@ -180,7 +180,7 @@ export default function HomePage() {
             <div className="step-content">
               <h3>Next session, next teammate</h3>
               <code className="step-code">8 memories exist for src/checkout/**. Call aide_recall if relevant.</code>
-              <p>The agent gets a small nudge on the first read of any file with scoped memories. It calls <code>aide_recall</code> and gets the right context back. Commit <code>.aide/memories/</code> and your teammates&apos; agents pick up the same lessons.</p>
+              <p>If memories exist for the path the agent just opened and haven&apos;t been recalled this session, the hook prompts <code>aide_recall</code>. Commit <code>.aide/memories/</code> and your teammates&apos; agents pick up the same memories on their next read of the same area.</p>
             </div>
           </div>
         </div>

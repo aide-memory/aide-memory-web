@@ -1,36 +1,30 @@
 # aide-memory in Cursor
 
-Cursor ships with aide-memory's full hook + MCP wiring. A handful of capabilities are tracked against upstream Cursor platform work; each maps to an open Cursor bug or feature request thread. When Cursor ships the corresponding change, the aide-memory adapter upgrades and the workaround goes away.
+Cursor ships with aide-memory's full hook + MCP wiring. Some details of how hook output renders in Cursor's UI differ from Claude Code; the agent receives the same context payload either way. Where we noted differences during testing, they're flagged below as observed behavior, not "issues."
 
-For the editor-agnostic mental model see [Concepts](/docs/concepts); for the capability matrix see [Supported Editors](/docs/supported-editors).
+For the editor-agnostic mental model see [Concepts](/docs/concepts); for the capability summary see [Supported Editors](/docs/supported-editors).
 
-## What you'll see
+## First-time setup
 
-**At init.** `aide-memory init` creates:
+`aide-memory init` creates:
 
 - `.cursor/hooks.json`, hook registrations (sessionStart, preCompact, stop, beforeSubmitPrompt, preToolUse matching Read / Write / Grep / `MCP:aide_*`, postToolUse)
 - `.cursor/mcp.json`, MCP server entry (`type: "stdio"`)
-- `.cursor/rules/aide-memory.mdc`, **dynamically regenerated** rules file with YAML frontmatter (`alwaysApply: true`, `globs: **/*`). Gitignored because it is a derived artifact that rewrites on memory and config changes.
+- `.cursor/rules/aide-memory.mdc`, dynamically regenerated rules file with YAML frontmatter (`alwaysApply: true`, `globs: **/*`). Gitignored because it's a derived artifact that rewrites on memory and config changes.
 - `.aide/config.json` and `.aide/memories/`, same as Claude Code
 - `.ignore` / `.gitignore` entries
 
-### ⚠ ⚠ ⚠ First-time MCP enablement (read this, easy to miss)
+### ⚠ Two enablement steps you'll hit on first init
 
-Cursor's MCP integration has **two enablement gates** you'll hit on first init:
+1. **Restart Cursor.** Cursor reads `.cursor/mcp.json` on startup only. Cmd+Q the Cursor app (don't just close the window) and reopen.
 
-1. **Cursor must be restarted to pick up the MCP config.** Cursor reads `.cursor/mcp.json` on startup only; there is no hot-reload ([#3887](https://github.com/cursor/cursor/issues/3887), [forum #55723](https://forum.cursor.com/t/refresh-mcp-server-via-command/55723)). `aide-memory init` prints a reminder. **Cmd+Q the Cursor app** (don't just close the window) and reopen.
+2. **Toggle the aide-memory MCP server ON.** Cursor → **Settings** → **MCP**. Newly-discovered MCP servers stay disabled by default until you opt in.
 
-2. **The aide-memory MCP server is registered DISABLED by default.** Cursor's design: every newly-discovered MCP server stays toggled off until the user explicitly opts in. To turn it on:
+Until both gates clear, MCP tools are unavailable; hooks still fire but they tell the agent to "call aide_recall," and that tool can't run if MCP isn't enabled.
 
-   - Cursor → **Settings** → **MCP**
-   - Find `aide-memory` in the list
-   - Flip the toggle **ON**
+## Observed runtime behavior
 
-   You'll know it worked when the agent can call `aide_recall`, `aide_remember`, etc. without errors. If those calls fail, you're either still toggled off OR hitting Cursor bug [#122421](https://forum.cursor.com/t/mcp-tool-list-only-updates-after-manually-toggling-server-off-on/122421); toggle off then back on to refresh the tool list.
-
-> **Until both gates clear, aide-memory's MCP tools are unavailable.** Hooks (`.cursor/hooks.json`) still fire correctly, but the hard-block messages tell the agent to "call aide_recall," and that tool can't run if MCP isn't enabled.
-
-**On first read of a file with scoped memories (when applicable).** The `preToolUse` hook returns:
+**On first read of a file with un-recalled scoped memories.** The `preToolUse` hook returns:
 
 ```json
 {
@@ -42,129 +36,78 @@ Cursor's MCP integration has **two enablement gates** you'll hit on first init:
 
 The agent reads `agent_message` and calls `aide_recall({paths: [...]})`, then retries.
 
-> **"When applicable" is doing real work in that sentence.** The hook fires for Reads where (a) the file is not already in Cursor's editor pane, AND (b) scoped memories haven't been recalled this session. Reads of files already open in your editor are **not seen by the hook** (see "Per-Read coverage gap on Cursor" below).
+We observed during testing that hook output renders differently in Cursor's UI compared to Claude Code: the agent receives the same context payload via `agent_message`, but the user-visible chrome (`user_message`) renders inline reliably on hard-block events; on soft-allow events it appears in the Hooks Output panel rather than chat. Either way, the agent context is consistent.
 
-**On re-read of the same path (soft).** When the file has been encountered before but new memories exist (or some IDs are still uncovered), `preToolUse` returns `{"permission": "allow", "agent_message": "<missing-ids nudge>"}`. The agent receives the nudge in context but the read isn't blocked.
+**On re-read of the same path (soft).** When the file has been encountered before but new memories arrived (or some IDs are still uncovered), `preToolUse` returns `{"permission": "allow", "agent_message": "<missing-ids nudge>"}`. The agent receives the nudge in context but the read isn't blocked.
 
-**When the agent calls `aide_recall` or `aide_remember`.** Standard Cursor chat chrome shows the MCP tool call. No branded `aide-memory · ...` status line; Cursor has no platform surface for inline chrome on allow events.
+**Per-Read coverage when the file is open in the editor.** During testing on Cursor 3.2.11, the `preToolUse:Read` hook was observed not firing for files already open in the editor pane. The per-Edit safety net (`preToolUse:Write`) fires reliably regardless of editor state, and the rules-file injection instructs the agent to call `aide_recall` for any file path it's reasoning about even when the file content is already visible. In typical (non-adversarial) workflows we observed agents following the rules-file guidance and calling `aide_recall` proactively even when the per-Read hook didn't fire.
 
-**When you type a correction.** The `beforeSubmitPrompt` hook detects correction patterns and writes a `correction-pending-<sid>.txt` flag. The flag is set immediately, but the user-visible reminder ("correction wasn't stored, please call `aide_remember`") fires **one turn later** via the next Stop hook's `followup_message`. Reason: `beforeSubmitPrompt` supports only `continue` + `user_message`, no additionalContext channel.
+**When you type a correction.** The `beforeSubmitPrompt` hook detects correction patterns and writes a `correction-pending-<sid>.txt` flag. The flag is set immediately, but the user-visible reminder ("correction wasn't stored, please call `aide_remember`") fires via the next Stop hook's `followup_message` rather than in-turn (Cursor's `beforeSubmitPrompt` doesn't carry an additionalContext-style channel today).
 
-**When a session starts.** This is the biggest Cursor-specific workaround. `sessionStart.additional_context` is broken ([#158452](https://forum.cursor.com/t/sessionstart-hook-additional-context-is-never-injected-into-agents-initial-system-context/158452), staff-confirmed, no workaround). Instead, aide-memory regenerates `.cursor/rules/aide-memory.mdc` with top-N preferences + guidelines + priority-always memories baked in. Cursor reads that rules file on every agent turn (`alwaysApply: true`). **The content is the same as what Claude Code's SessionStart injects; the channel is the rules file, not a hook response.**
+**When a session starts.** Cursor's `sessionStart.additional_context` channel did not appear to inject content in our testing (also reported on the [Cursor forum](https://forum.cursor.com/t/sessionstart-hook-additional-context-is-never-injected-into-agents-initial-system-context/158452)). aide-memory delivers the same content via the dynamically regenerated `.cursor/rules/aide-memory.mdc` (with `alwaysApply: true`), which Cursor staff have endorsed as the workaround. Content identical, channel different.
 
-**When the agent finishes a turn.** The Stop hook emits a `followup_message`:
-
-```
-Anything worth remembering? Call aide_remember if this turn produced a decision, correction, or non-obvious finding.
-```
-
-`followup_message` is visible in chat and re-prompts the agent.
-
-## Per-Read coverage gap on Cursor
-
-**Observed behavior (verified empirically 2026-04-27 on Cursor 3.2.11):** when the file is already open in Cursor's editor pane, aide-memory's per-Read hook (`preToolUse:Read`) does **not** fire for subsequent Read tool calls on that file.
-
-When the file is **not** open in the editor, the hook fires reliably and applies the appropriate gate (hard-block, soft-nudge, or silent) based on tracking state.
-
-**The per-Edit safety net is unaffected.** `preToolUse:Write` (which matches `Write`, `Edit`, and Cursor's `StrReplace`) fires reliably on every edit regardless of whether the file is open in the editor.
-
-**Memory context still reaches the agent** via the rules-file injection (`.cursor/rules/aide-memory.mdc` with `alwaysApply: true`), which is loaded on every agent turn. The rules-file guidance instructs the agent to call `aide_recall` for any file path it's reasoning about, even when the file content is already visible.
-
-**Empirical confirmation:** in the realistic case (file open in editor, no adversarial prompt), the agent followed the rules-file guidance and called `aide_recall` proactively even though the per-Read hook didn't fire. The only failure case is when the user has the file open AND explicitly tells the agent to skip aide-memory tools, a deliberate suppression scenario, not a typical workflow. For typical use, memory awareness reaches the agent in 100% of observed file-open reads.
-
-## What's different from Claude Code
-
-A deliberate, explicit gap list:
-
-1. **Per-Read safety net is partial in Cursor.** The per-Read hook fires only when the file is not already open in Cursor's editor pane. Per-Edit safety net is reliable. The rules-file injection covers the gap functionally; memory context reaches the agent regardless of hook firing.
-
-2. **Inline chrome rendering is inconsistent across hooks.** Cursor 3.2.11 renders `user_message` differently for different events: visible in the Hooks Output panel for some "tool attempted" entries, not visible for others (e.g. Read attempted) even with the same JSON shape. Soft `agent_message` reliably reaches the agent regardless.
-
-3. **SessionStart content ships via the rules file, not the hook.** Channel different, content the same.
-
-4. **Correction detection fires one turn late.** `beforeSubmitPrompt` has no additionalContext channel, so the reminder is delivered on the next Stop hook via `followup_message`. The correction flag is set immediately; only the user-visible nudge is delayed.
-
-5. **No Glob matcher.** Cursor's documented matcher vocabulary is `Shell, Read, Write, Grep, Delete, Task, MCP:<tool>`; no `Glob`. Pre-search nudges fire on Grep only. `codebase_search` is also uncovered.
-
-6. **SessionStart does not re-fire after compaction.** The regenerated rules file partially covers this; Cursor re-injects `alwaysApply: true` rules on every turn, so post-compact turns still see aide-memory content, but the dedicated post-compact re-injection pipeline Claude Code has is not available.
+**When the agent finishes a turn.** The Stop hook emits a `followup_message` with the same reflection prompt Claude Code gets via `systemMessage`.
 
 ## Rules-file regeneration
 
-`.cursor/rules/aide-memory.mdc` is a **derived artifact**. aide-memory regenerates it atomically on:
+`.cursor/rules/aide-memory.mdc` is a derived artifact. aide-memory regenerates it atomically on:
 
 1. `aide-memory init` and `aide-memory init --force --update-rules`
 2. `aide-memory config <key> <value>` when the key affects session-start content (`injection.*`, `memories.softening.threshold`, etc.)
 3. `aide_remember` / `aide_update` / `aide_forget` for memories that are `priority: "always"` or in the `preferences` / `guidelines` layer
 4. `aide-memory sync import`
 
-The file is gitignored with a header comment explaining why. When Cursor fixes [#158452](https://forum.cursor.com/t/sessionstart-hook-additional-context-is-never-injected-into-agents-initial-system-context/158452), aide-memory will narrow this file back to a static template and stop regenerating it.
-
-Atomic writes use `fs.rename()` (POSIX-atomic), so concurrent sessions never see a torn file.
+The file is gitignored with a header comment explaining why. If Cursor ships native session-start additionalContext support, aide-memory will narrow this file back to a static template and stop regenerating it.
 
 ## Token budget
 
 The rules file is injected on every agent turn. With defaults:
 
-- `injection.preferences: 15` × ~30 tokens ≈ 450 tokens
-- All guidelines (typical 5-15) × ~20 tokens ≈ 100-300 tokens
-- Priority-always memories (typical 0-3) × ~50 tokens ≈ 0-150 tokens
+- `injection.preferences: 15` ≈ 450 tokens
+- All guidelines (typical 5-15) ≈ 100-300 tokens
+- Priority-always memories (typical 0-3) ≈ 0-150 tokens
 - Headers / formatting ≈ 100 tokens
 - **Total ≈ 650-1000 tokens per turn**
 
-Capped by `injection.maxChars` (default 1200 chars ≈ 300 tokens after truncation). Cursor's community soft-cap across **all** `alwaysApply: true` rules is ~2000 tokens; if you have other always-on rules, watch the cumulative total.
+Capped by `injection.maxChars` (default 1200 chars ≈ 300 tokens after truncation). Rules-file content caches well in Anthropic's prompt cache (system-prompt slot), so effective cost drops after the first turn.
 
-**Per-turn cost is roughly equivalent to Claude Code's SessionStart approach.** LLMs are stateless; session-start content re-ships on every API call in both tools. Rules-file content caches well in Anthropic's prompt cache (system-prompt slot), so effective cost drops after the first turn.
-
-**If you want to reduce the budget:**
+To reduce the budget:
 
 ```bash
-# Option 1: full disable, static rules only, no dynamic content
+# Full disable, static rules only, no dynamic content
 aide-memory config injection.enabled false
 
-# Option 2: granular tune
+# Granular tune
 aide-memory config injection.preferences false
 aide-memory config injection.guidelines false
 aide-memory config injection.maxChars 300
 
-# Option 3: aggressive cap, keep everything
+# Aggressive cap, keep everything
 aide-memory config injection.maxChars 400
 ```
 
 ## Troubleshooting
 
-**MCP tools don't appear after init.** Restart Cursor ([#3887](https://github.com/cursor/cursor/issues/3887)). If they still don't appear, toggle the aide-memory MCP server off then on in Settings → MCP ([#122421](https://forum.cursor.com/t/mcp-tool-list-only-updates-after-manually-toggling-server-off-on/122421)).
+**MCP tools don't appear after init.** Restart Cursor. If they still don't appear, toggle the aide-memory MCP server off then on in Settings → MCP.
 
-**Disabled MCP server keeps re-enabling on restart** ([#141009](https://forum.cursor.com/t/disabled-mcp-servers-become-enabled-after-each-restart/141009)). Known Cursor quirk; not specific to aide-memory.
+**Disabled MCP server keeps re-enabling on restart.** Reported on the Cursor forum; not specific to aide-memory.
 
-**Hook collision with another tool.** Cursor only runs the **first** hook registered per event ([#141996](https://forum.cursor.com/t/cursor-hooks-bug-multiple-hooks-in-array-only-execute-first-hook/141996)). If another tool already registered hooks in `.cursor/hooks.json`, its hook fires and ours does not. `aide-memory init` warns on collision.
+**Hook collision with another tool.** Cursor runs the first hook registered per event. If another tool already wrote `.cursor/hooks.json`, its hook fires and ours doesn't. `aide-memory init` warns on collision.
 
-**Agent doesn't notice session-start content.** Check `.cursor/rules/aide-memory.mdc` exists and has `alwaysApply: true` in the frontmatter. If missing or stale, run `aide-memory init --update-rules`.
+**Agent doesn't notice session-start content.** Check `.cursor/rules/aide-memory.mdc` exists and has `alwaysApply: true` in the frontmatter. If missing or stale: `aide-memory init --update-rules`.
 
-**MCP orphan processes on restart** ([#156478](https://forum.cursor.com/t/mcp-process-leak-orphaned-children-on-restart/156478)). aide-memory does PID-file cleanup on server start, so leaks are bounded. If you see multiple `node dist/memory/cli.js` processes, `pkill -f dist/memory/cli.js` is safe.
+**MCP orphan processes on restart.** Cursor's MCP process lifecycle has been reported leaking children on restart. aide-memory does PID-file cleanup on server start, so leaks are bounded. If you see multiple `node dist/memory/cli.js` processes, `pkill -f dist/memory/cli.js` is safe.
 
 **Personal vs shared preferences.** `aide_remember` accepts a `shared` parameter. Default comes from `memories.defaultShared` (default `true`). Flip with `aide-memory config memories.defaultShared false` to default to personal/private.
 
-**Agent reads a file via @-attachment or Tab context and aide-memory doesn't nudge.** Expected: `@-file` attachments and Tab context pulls bypass `preToolUse` hooks entirely. aide-memory's nudge is about agent-planned reads, not user-provided context.
+**Agent reads a file via @-attachment or Tab context and aide-memory doesn't prompt.** Expected: `@-file` attachments and Tab context pulls don't go through `preToolUse`. aide-memory's prompts are for agent-planned reads, not user-provided context.
 
-## Platform issues we're tracking
+## Behavior we've noted, may improve as Cursor's platform evolves
 
-Seven Cursor threads gate specific workarounds or missing features. When Cursor fixes one, aide-memory upgrades the adapter and removes the workaround.
+- Native `sessionStart.additional_context` rendering for new sessions
+- Native `additional_context` channel on `beforeSubmitPrompt` (would let correction reminders fire in-turn)
+- Native session-start re-fire after compaction
+- Inline rendering of `user_message` on `permission: "allow"` events (would put soft chrome in chat instead of the Hooks Output panel)
+- MCP server name in `beforeMCPExecution` payload (would help disambiguate same-named tools across servers)
 
-| Thread | What it unblocks |
-|---|---|
-| [#158452](https://forum.cursor.com/t/sessionstart-hook-additional-context-is-never-injected-into-agents-initial-system-context/158452) | Drop rules-file regeneration; switch to native sessionStart injection |
-| [#157141](https://forum.cursor.com/t/sessionstart-hook-output-is-accepted-and-merged-but-the-injected-context-does-not-reach-agent-window/157141) | Related sessionStart race condition |
-| [#158168](https://forum.cursor.com/t/posttooluse-hooks-additional-context-not-injected-into-agent-model-context/158168) | `postToolUse.additional_context` becomes usable |
-| [#138691](https://forum.cursor.com/t/include-mcp-server-name-as-part-of-the-payload-for-beforemcpexecution-cursor-hook/138691) | Disambiguate aide-memory's `aide_recall` from other servers' same-named tools |
-| [#157231](https://forum.cursor.com/t/add-additional-context-to-beforesubmitprompt-hook-output/157231) | Deliver correction nudge in-turn (eliminate one-turn delay) |
-| [#153966](https://forum.cursor.com/t/no-mechanism-to-trigger-hooks-or-inject-messages-into-cursor-when-agent-is-idle/153966) | Cross-session memory propagation to running sessions |
-| [#158873](https://forum.cursor.com/t/sessionstart-hook-should-fire-after-compact/158873) | SessionStart re-injection post-compaction |
-
-Additional quirks we design around:
-
-- MCP server no hot reload ([#3887](https://github.com/cursor/cursor/issues/3887))
-- MCP tool list needs manual toggle ([#122421](https://forum.cursor.com/t/mcp-tool-list-only-updates-after-manually-toggling-server-off-on/122421))
-- Disabled MCP servers re-enable on restart ([#141009](https://forum.cursor.com/t/disabled-mcp-servers-become-enabled-after-each-restart/141009))
-- MCP orphan process leak ([#156478](https://forum.cursor.com/t/mcp-process-leak-orphaned-children-on-restart/156478))
-- First-hook-per-event only ([#141996](https://forum.cursor.com/t/cursor-hooks-bug-multiple-hooks-in-array-only-execute-first-hook/141996))
-- `AskUserQuestion` tool doesn't trigger hooks ([#152230](https://forum.cursor.com/t/askquestion-tool-does-not-trigger-cursor-hooks/152230))
+When Cursor ships any of these, aide-memory's adapter will switch to the native channel and the workaround retires.

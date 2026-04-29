@@ -54,8 +54,8 @@
   display: inline-block;
   padding: 0.35rem 1rem;
   border-radius: 999px;
-  border: 1px solid rgba(0, 194, 203, 0.35);
-  background: rgba(0, 194, 203, 0.1);
+  border: 1px solid rgba(11, 138, 145, 0.5);
+  background: rgba(11, 138, 145, 0.12);
   color: #5fe1e6;
   font-size: 0.85rem;
   font-weight: 500;
@@ -73,7 +73,7 @@
 }
 
 .hero-highlight {
-  background: linear-gradient(135deg, #5fe1e6 0%, #00c2cb 50%, #14b8a6 100%);
+  background: linear-gradient(135deg, #14b8a6 0%, #0b8a91 50%, #0aa9b1 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -156,8 +156,8 @@
   display: inline-flex;
   align-items: center;
   padding: 0.7rem 1.5rem;
-  background: #00c2cb;
-  color: #062a2d;
+  background: #0b8a91;
+  color: #f1f5f9;
   border-radius: 8px;
   font-weight: 700;
   font-size: 0.95rem;
@@ -190,7 +190,7 @@
 
 /* Problem section */
 .problem-section {
-  padding: 2.5rem 1.5rem 3rem;
+  padding: 1rem 1.5rem 3rem;
   max-width: 1100px;
   margin: 0 auto;
   text-align: center;

@@ -1,25 +1,25 @@
-# Concepts
+# Concepts: the aide-memory mental model
 
-This page is the editor-agnostic mental model. For the runtime UX inside a specific tool see the [Supported Editors](/docs/supported-editors) page; for config keys see [Configuration](/docs/configuration); for the tools your agent calls and the CLI commands you run see [Reference](/docs/reference).
+aide-memory is the layer between your editor's hooks, your agent's MCP tools, and the persistent knowledge of your codebase. It captures decisions, preferences, and technical context as they happen, surfaces only what's relevant for the file the agent is touching, and shares with your teammates over git.
 
-## What makes aide-memory different
+This page is the editor-agnostic mental model. For runtime UX inside a specific tool see the [Supported Editors](/docs/supported-editors) page; for config keys see [Configuration](/docs/configuration); for the tools your agent calls and the CLI commands you run see [Reference](/docs/reference).
 
-Most "memory" tools for AI coding agents fall into one of three shapes:
+---
 
-- **Static rules files** (CLAUDE.md, .cursorrules), one flat file, no scoping, no auto-capture, drifts as code evolves.
-- **Standalone memory tools** (claude-mem, engram, MemPalace, etc.), workspace-flat or namespace-flat stores, no path scoping inside a project, capture is opt-in or session-end only.
-- **Cloud SaaS memory layers**, network round-trip per call, account required, source of truth lives off your machine.
+## Where aide-memory fits
 
-aide-memory is the only stack that combines all of the following:
+Most coding agents already work with two kinds of context:
 
-- **Layered + path-scoped recall.** Glob scopes (`src/auth/**`, `packages/api/**`) AND four typed layers (preferences / technical / area_context / guidelines). The agent gets only what's relevant for the file it just opened, ranked by how specific the layer is.
-- **Hook-driven capture.** Six hooks fire at the right moments (corrections, session start, file read, before compaction, on turn end). Capture happens because the editor invokes the hook, not because anyone remembers to call a tool.
-- **File-per-memory + git-synced.** Each memory is one JSON file. Commit them, push them, pull them, your teammates' agents pick up the lessons you stored. Personal preferences stay gitignored; team-shared memories travel with the repo.
-- **Cross-tool.** Claude Code and Cursor read the same `.aide/memories/` directory. Switch tools mid-task and the context follows.
-- **Local-first.** SQLite cache + JSON files on your disk. No cloud round-trip per recall, no account, no daemon. Telemetry is opt-in and only ships anonymized event counts (never content).
-- **Uses your existing agent.** aide-memory is a typed store + dispatcher + MCP server, no LLM calls of its own. The model you already pay for does the reasoning.
+- **Editor-level rules** (CLAUDE.md, .cursorrules) carry always-on guidance, project conventions, and reference info that should be available on every turn. They're a single flat document, no scoping, no categorization.
+- **Skills / sub-agents** carry procedures the agent can invoke for specific tasks.
 
-aide-memory does not replace CLAUDE.md or .cursorrules. They sit at the editor-config layer for static, project-wide guidance; aide-memory adds dynamic, scoped, layered, auto-captured memory on top. They coexist.
+aide-memory adds a third surface: **dynamic, scoped, categorized knowledge that grows with the code, captured automatically and surfaced only when the agent is in the relevant area.** Rules cover always-on guidance; skills cover procedures; aide-memory covers what those two don't.
+
+The three coexist. aide-memory doesn't replace your CLAUDE.md or your skills. The mental model:
+
+- **Rules file** = "things every agent in this project should always know" (style, project layout, common pitfalls)
+- **Skills** = "procedures the agent can run for specific tasks"
+- **aide-memory** = "the body of decisions, preferences, technical facts, and corrections that grows with your codebase, scoped to where each one applies"
 
 ---
 
@@ -29,58 +29,57 @@ A memory is a single JSON file under `.aide/memories/<layer>/`. It captures one 
 
 ## 2. The four layers
 
-Layers separate **how** the knowledge is used. Recall and injection are prioritized by layer, so the agent gets the most specific context first.
+Layers separate **how** the knowledge is used. Recall and injection are prioritized by layer, so the agent gets the most context-relevant entries first.
 
-| Layer | Use when | Real-world example |
-|-------|----------|---------------------|
-| `preferences` | How a contributor likes to work | "When refactoring shared types, prefer `type` aliases over `interface` for union shapes" |
-| `technical` | Facts about the stack not obvious from code | "Apollo client uses persisted query hashes; raw queries 404 in prod" |
-| `area_context` | Decisions and context for specific code areas | "Checkout uses Stripe Payment Element, not the legacy Card Element. Migration landed sprint 38." |
-| `guidelines` | Team-wide or project-wide principles | "Public REST endpoints return errors as `{error: {code, message}}`, never bare strings" |
+| Layer | Use when | Example |
+|---|---|---|
+| `preferences` | How a contributor likes to work | "When implementing pagination, prefer cursor-based over offset-based for queries that may grow unbounded" |
+| `technical` | Facts about the stack not obvious from code | "Production rate limit on the public endpoints is 60 req/min per IP, enforced at the edge before the app sees it" |
+| `area_context` | Decisions and context for specific code areas | "The billing module migrated to event-sourced state in Q1; new code should append events, never mutate balances directly" |
+| `guidelines` | Team-wide or project-wide principles | "Errors that cross the public API boundary must include a stable machine-readable code, not just a message" |
 
-`preferences` splits further into `preferences/personal/` (gitignored, per-developer) and `preferences/shared/` (committed, team-visible). The other three layers are always team-visible by default.
+`preferences` further splits into `personal/` (gitignored) and `shared/` (committed). The other three layers are team-visible by default.
 
-## 3. Scopes (glob patterns)
+## 3. Scopes (relative-to-project glob patterns)
 
-Every memory can carry a `scope`, a glob pattern describing which code area it applies to.
+Every memory can carry a `scope`, a glob pattern describing which code area it applies to. **Scopes are relative to your project root** so the same memory works on every machine that pulls it from git. Examples:
 
-- `src/auth/**`: relevant when working in the auth module
-- `src/components/checkout/**`: relevant in checkout components
-- `packages/api/**`: relevant in a monorepo's api package
-- *(no scope)*: project-wide, surfaces everywhere
+- `src/auth/**` matches the auth module across machines
+- `packages/api/server/**` matches a monorepo subpackage
+- *(no scope)* means project-wide; surfaces everywhere
 
-**Inheritance** is the key property: a memory on `src/**` surfaces for `src/checkout/CartSummary.tsx`. A memory on `src/checkout/**` surfaces only inside checkout.
+**Inheritance** is the key property: a memory scoped to `src/**` surfaces for `src/checkout/CartSummary.tsx`. A memory scoped to `src/checkout/**` surfaces only inside checkout code. Scoping lets you attach context to specific areas without polluting recall in unrelated files.
 
-How specific a scope must be to fire on a per-file read is itself configurable: `recall.minScopeDepth` (default `1`) controls the bar. Scopes below the bar still load at SessionStart but skip per-file recall to keep the per-file nudge quiet on broad-scope projects. See [Configuration](/docs/configuration) for the full visualization.
+How specific a scope must be to surface per-file vs SessionStart-only is **tunable** via `recall.minScopeDepth` (default `1`, permissive). See [Configuration](/docs/configuration) for the visualization.
 
 ## 4. Hooks
 
-Hooks are small scripts the editor runs at lifecycle points. aide-memory installs them at `aide-memory init`. The agent does not call them; the editor does. So capture and prompting happen automatically, not "if the agent feels like it."
+Hooks are small scripts the editor runs at lifecycle points. aide-memory installs them at `aide-memory init`. The agent does not call them; the editor does. Hooks fire automatically at the right lifecycle moments so capture and recall happen without anyone needing to invoke them by hand.
 
 | Hook | Fires when | What aide-memory does |
-|------|-----------|-----------------------|
-| **SessionStart** | Session begins or resumes | Injects top-N preferences + guidelines + priority-always memories as session context |
-| **PreToolUse** | Before file read / edit / search / `aide_*` MCP call | First read of a file with scoped memories is blocked until the agent calls `aide_recall`; later reads of the same file are soft-nudged or silent. Configurable: `hooks.read.maxBlocks` / `hooks.search.mode` flip between block / soft / off. |
-| **PostToolUse** | After `aide_recall` / `aide_remember` / `aide_search` | Records what was recalled so subsequent reads of the same path don't re-prompt; clears correction-pending flags |
-| **UserPromptSubmit** | You send a message | Detects correction patterns ("no, use X instead") and prompts the agent to store the correction with `aide_remember` |
-| **Stop** | Agent finishes a turn | Periodic "anything worth remembering?" nudge on a configurable schedule. Default ramps every 3 turns through turn 9, then every 5 through turn 29, then every 10 afterwards. |
-| **PreCompact** | Before context compaction | Prompts the agent to save active plans/decisions before the window collapses; clears session tracking so post-compact reads re-prompt cleanly |
+|---|---|---|
+| **SessionStart** | Session begins, resumes, or clears | Injects top preferences + guidelines + priority-always memories as session context |
+| **PreToolUse** | Before file read, edit, search, or `aide_*` MCP call | First read of a file with un-recalled scoped memories: prompts the agent to call `aide_recall`. After that, subsequent reads are silent (or soft-nudged if new memories arrive). All tunable. |
+| **PostToolUse** | After `aide_recall` / `aide_remember` / `aide_search` | Records what was recalled so re-reads of the same path don't re-prompt for the IDs already in context. If new IDs arrive that weren't in the last recall, the next read can soft-nudge for those. |
+| **UserPromptSubmit** | User sends a message | Detects correction patterns ("no, use X instead") and prompts the agent to call `aide_remember` |
+| **Stop** | Agent finishes a turn | Periodic reflection prompt ("anything worth remembering?") on a tunable schedule (default ramps every 3 → every 5 → every 10 turns by session length) |
+| **PreCompact** | Before context compaction | Prompts the agent to save active plans/decisions; clears session tracking so post-compact reads re-prompt cleanly |
 
-Not every editor supports every channel. See [Supported Editors](/docs/supported-editors) for the matrix and [Hooks](/docs/hooks) for the script-by-script breakdown.
+Not every editor supports every channel. See [Supported Editors](/docs/supported-editors) for what each adapter ships today and [Hooks](/docs/hooks) for the script-by-script breakdown.
 
 ## 5. MCP tools
 
-aide-memory ships a local MCP server exposing seven tools. The agent calls them directly during conversation. Each tool is described fully in [Reference](/docs/reference); here is the one-liner version.
+aide-memory ships a local MCP server exposing seven tools. Both the agent and you can call them: the agent invokes them during conversation; you can run the equivalent CLI command. See [Reference](/docs/reference) for the full parameter listing.
 
 | Tool | Purpose |
-|------|---------|
-| `aide_recall` | Path-scoped, layered, scope-specificity-ranked retrieval; layer-diversity balanced when total results are small |
+|---|---|
+| `aide_recall` | Path-scoped, layer-ordered, scope-specificity-ranked, layer-diversity-balanced retrieval |
 | `aide_remember` | Store a new memory (layer + scope + what/why + tags) |
 | `aide_update` | Edit an existing memory's content, scope, or tags |
-| `aide_forget` | Permanently delete a memory (no archive) |
-| `aide_search` | FTS5 keyword search with BM25 ranking; optional semantic supplement when an embedding backend is installed |
+| `aide_forget` | Permanently delete a memory (no archive mode) |
+| `aide_search` | Keyword and/or semantic search across all memories (modes: `auto` / `keyword` / `semantic`) |
 | `aide_memories` | List memories with layer, scope, contributor, tag filters |
-| `aide_import` | Bulk-import from markdown bullet/numbered lists |
+| `aide_import` | Bulk-import from markdown bullet / numbered lists |
 
 ## 6. Storage shape
 
@@ -93,52 +92,42 @@ aide-memory ships a local MCP server exposing seven tools. The agent calls them 
 │   ├── technical/
 │   ├── area_context/
 │   └── guidelines/
-├── config.json          # local configuration
+├── config.json          # local configuration with every public knob seeded
+├── config-reference.md  # auto-generated key/default/description listing
 └── cache/
     ├── memory.db        # SQLite cache (rebuildable, gitignored)
     └── recalled-paths-<sid>.txt  # session-scoped tracking
 ```
 
-The JSON files are the source of truth. SQLite is a rebuildable cache; delete `.aide/cache/memory.db` and it reconstructs from the JSON on the next run.
+The JSON files are the source of truth. SQLite is a rebuildable cache; if `.aide/cache/memory.db` is missing it should reconstruct from the JSON on the next run. Recall stats (`recalled_count`, `last_recalled_at`) live only in the cache by design, so per-machine usage data doesn't bleed into git history.
 
 ## 7. Sync via git
 
-Memories are files. Commit them, push them, pull them. The `post-checkout` git hook (installed at init) rebuilds the SQLite cache after `git pull` or a branch switch so your local cache stays current. Conflicts resolve by `updated_at` timestamp; newer wins.
+Memories are files. Commit them, push them, pull them. A `post-checkout` git hook (installed at init) imports new or changed memory files into the local SQLite cache after `git pull` or branch switch. Conflicts resolve by `updated_at` timestamp; newer wins.
 
 ## 8. Recall strategy
 
-When the agent calls `aide_recall({paths: [...]})`, the engine:
+When the agent calls `aide_recall({paths: [...]})`:
 
-1. Loads memories whose scope matches at least one of the requested paths (with parent inheritance, so querying `src/` returns memories scoped under `src/`).
-2. Sorts by **scope match first** (scoped beats project-wide), then **layer priority** (`area_context` > `technical` > `preferences` > `guidelines`), then **scope specificity** (deeper scopes rank higher) and keyword relevance if a query was provided.
-3. Caps at `recall.limit` (default 20) before returning.
-4. **Layer-diversity rebalance**: when the total result set is below `recall.layerDiversityMinLimit` (default 5), under-represented layers get swapped up so each enabled layer is at least represented.
+1. **Path-matched memories**: scoped globs that cover the requested paths (with parent inheritance: querying `src/` returns memories scoped under `src/`).
+2. **Sort order**: scope match first (scoped beats project-wide), then layer priority (`area_context` > `technical` > `preferences` > `guidelines` per `LAYER_ORDER` in `src/memory/recall.ts`), then scope specificity (deeper scopes rank higher) and keyword relevance.
+3. **Cap**: `recall.limit` (default 20) per call; remaining IDs come back as `missingIds` on the next pre-read fire so the agent can call `aide_recall({ids: [...]})` for the next batch.
+4. **Layer-diversity rebalance**: when results are below `recall.layerDiversityMinLimit` (default 5), under-represented layers swap up so each enabled layer is represented.
 
-For conceptual searches ("where do we handle auth tokens?"), the agent should prefer `aide_search` over `aide_recall`, since keyword + semantic search surfaces memories that path-scoping alone would miss.
+For conceptual searches ("where do we handle auth tokens?"), prefer `aide_search` over `aide_recall` since keyword (and optional semantic) search surfaces memories that path-scoping alone would miss.
 
-## 9. Coexistence with rules files and skills
+## 9. What aide-memory does not do
 
-aide-memory does not replace what already exists in your editor:
-
-- **CLAUDE.md / .cursorrules** still work for project-wide static guidance. aide-memory's `init` writes its own rules file (Claude Code: `.claude/rules/aide-memory.md`; Cursor: `.cursor/rules/aide-memory.mdc`) that teaches the agent when to call each MCP tool. Both rules files coexist.
-- **Skills / sub-agents** still trigger as configured. aide-memory just adds the persistent typed memory store underneath.
-- **MCP tool ecosystem** is unaffected. aide-memory's seven tools sit alongside whatever other MCP servers you've registered.
-
-The mental model: editor-level rules are for the things every agent in the project should always know; skills are for procedures; aide-memory is for the dynamic, scoped, layered knowledge that grows and evolves with the code.
-
-## 10. What aide-memory does not do
-
-- **No LLM calls of its own.** The agent in your editor does all the reasoning. aide-memory is a typed store + dispatcher + MCP server, no extra inference cost.
-- **No cloud.** Memory content lives on your disk. Anonymized event tallies are sent to PostHog only when you opt in via `AIDE_TELEMETRY=on`. Default is off.
-- **No "intelligent summarization" magic.** Memories are exactly what you (or the agent on your behalf) wrote. No background distillation, no LLM-rewriting of stored content. If you want a memory to read differently, edit the file or call `aide_update`.
+- **No LLM calls of its own.** The model in your editor does the reasoning. aide-memory is a typed store, hook dispatcher, and MCP server. No extra inference cost.
+- **No background distillation.** Memories are exactly what you (or the agent on your behalf) wrote. If you want a memory to read differently, edit the file or call `aide_update`. Future enhancements may add summarization, but that's not what's shipping today.
+- **No remote storage.** Memory content lives on your disk. Telemetry is opt-in: until you set `AIDE_TELEMETRY=on`, aide-memory makes zero telemetry network calls.
 
 ---
 
 ## Further reading
 
-- [Configuration](/docs/configuration), every config key, default, and visualized walkthrough
+- [Configuration](/docs/configuration), every config key, default, and which editors honor it
 - [Reference](/docs/reference), MCP tools + CLI commands side-by-side
-- [Hooks](/docs/hooks), per-hook script walkthrough
-- [Architecture](/docs/architecture), internals: adapters, dispatcher, recall pipeline
-- [Supported Editors](/docs/supported-editors), capability matrix
-- [Comparison](/docs/comparison), how aide-memory differs from claude-mem and engram
+- [Hooks](/docs/hooks), per-hook walkthrough
+- [Architecture](/docs/architecture), internals: storage, recall, sync
+- [Supported Editors](/docs/supported-editors), what each adapter ships today

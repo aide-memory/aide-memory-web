@@ -4,16 +4,16 @@ aide-memory, [claude-mem](https://github.com/thedotmack/claude-mem), and [engram
 
 ## What aide-memory uniquely combines
 
-The differentiator is the combination, not any single piece:
+The differentiator is the combination of these traits, not any single one in isolation. claude-mem and engram each take a different shape:
 
-- **Layered + path-scoped recall.** Glob scopes (`src/auth/**`, `packages/api/**`) AND four typed layers (preferences / technical / area_context / guidelines). The agent gets only what's relevant for the file it's touching, ranked by how specific the layer is.
-- **Hook-driven auto-capture.** Six hooks fire across the session lifecycle so capture happens because the editor invokes them, not because the user or agent remembers to.
-- **File-per-memory + git-synced.** One JSON file per memory under `.aide/memories/`. `git add`, `git push`, `git pull` is the team-sync path. Personal preferences stay gitignored; shared memories travel with the repo.
-- **Cross-tool out of the box.** Claude Code and Cursor read the same store today; more editor adapters in flight.
+- **Layered + path-scoped recall.** Glob scopes (`src/auth/**`, `packages/api/**`) plus four categorized layers (preferences / technical / area_context / guidelines). The agent gets memories relevant to the file it's touching, ordered by how specific the layer is.
+- **Hooks prompt at the right moments.** Six hooks fire across the session lifecycle so capture and recall happen automatically, with the editor invoking them.
+- **File-per-memory + git-synced.** One JSON file per memory under `.aide/memories/`. `git add`, `git push`, `git pull` is the team-sync path. Personal preferences are gitignored; team-shared memories travel with the repo.
+- **Cross-tool memory store.** Claude Code and Cursor read the same store today; more editor adapters may come depending on user demand.
 - **Local-first.** SQLite cache + JSON files on your machine. Telemetry is opt-in; nothing is sent until you set `AIDE_TELEMETRY=on`.
-- **Uses your existing agent.** No LLM calls of aide-memory's own; the model in your editor does the reasoning, no extra inference cost.
+- **No extra inference cost.** aide-memory does no LLM calls of its own; the model in your editor does the reasoning.
 
-claude-mem and engram each cover some of these but not all. The grid below makes the differences explicit.
+The grid below maps how each tool covers each axis.
 
 ## Feature comparison
 

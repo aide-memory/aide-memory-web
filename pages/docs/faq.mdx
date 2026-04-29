@@ -100,7 +100,7 @@ If you have specific use cases, file an issue on GitHub.
 
 No. aide-memory complements them. CLAUDE.md and .cursorrules sit at the editor-config layer for static, project-wide guidance. aide-memory adds **dynamic, scoped, layered, auto-captured** memory on top. Both coexist. The `init` command writes its own rules files (`.claude/rules/aide-memory.md` and `.cursor/rules/aide-memory.mdc`) that teach the agent when to call each MCP tool; your existing rules files keep doing their job.
 
-Skills / sub-agents likewise still trigger as configured. aide-memory just adds the persistent typed memory store underneath.
+Skills / sub-agents still trigger as configured. The mental model: rules files cover always-on guidance, skills cover procedures, aide-memory covers the dynamic scoped knowledge that grows with the code. The three coexist; aide-memory doesn't sit above or below the others.
 
 ## Does aide-memory cost extra inference money?
 
@@ -124,9 +124,17 @@ Open a discussion on GitHub: https://github.com/aide-memory/aide-memory/discussi
 
 aide-memory is proprietary freeware; the source is not public, so external pull requests aren't accepted. Bug reports, feature requests, and feedback are very welcome on the issue tracker.
 
+## Are memory scopes absolute or relative paths?
+
+Relative, by convention and design. A scope like `src/auth/**` is interpreted relative to your project root, so the same memory works on every machine that pulls it from git: your teammate's `~/projects/myapp/src/auth/middleware.ts` and your `~/work/myapp/src/auth/middleware.ts` both match the same `src/auth/**` scope. If you accidentally pass an absolute path as a scope, it ships in the JSON as-is and won't match across machines, so stick to project-relative globs.
+
+## Will aide-memory drift like a rules file does?
+
+That's a real risk we're working to mitigate. Today, the rules file written at init nudges the agent to call `aide_remember` when corrections or decisions surface, and the Stop hook periodically prompts a reflection. Both help capture stay current. As use grows, we plan to add tooling to surface stale memories (low recall count, last-updated long ago) and prompt the team to re-evaluate or `aide_forget`. If you have a specific drift scenario you're worried about, file an issue.
+
 ## How does path scoping work exactly?
 
-Path scoping uses glob patterns with **parent inheritance**:
+Path scoping uses glob patterns with **parent inheritance**. Scopes are relative to your project root:
 
 - A memory for `src/**` applies everywhere under `src/`
 - A memory for `src/components/**` applies only under `src/components/`
