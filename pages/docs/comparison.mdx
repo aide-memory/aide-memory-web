@@ -1,65 +1,66 @@
 # Comparison
 
-aide-memory, [claude-mem](https://github.com/thedotmack/claude-mem), and [engram](https://github.com/ayvazyan10/engram) all attempt to give AI coding agents persistent memory across sessions. They take different shapes. This page describes each factually so you can pick the one (or combination) that matches your workflow.
+aide-memory, [claude-mem](https://github.com/thedotmack/claude-mem), and [engram](https://github.com/ayvazyan10/engram) all give AI coding agents some form of persistent memory. They take different shapes. This page describes each as accurately as we can verify so you can pick the one (or combination) that fits your workflow.
+
+A note on framing: aide-memory is a new entrant. claude-mem is an established project (~70k stars, multiple releases per week). engram is a more recent cognitive-architecture-style memory system. We're not claiming parity in maturity; we're describing how the approaches differ.
 
 ## What's distinctive about aide-memory
 
-A short list of traits that aide-memory carries together. Each individual trait isn't unique, but the combination is what aide-memory is built around:
+A short list of traits aide-memory carries together. Each individual trait isn't unique, but the combination is what aide-memory is built around:
 
-- **Categorized + scoped recall**, four memory layers (preferences / technical / area_context / guidelines) plus glob scopes (e.g. `src/auth/**`, `packages/api/**`). The agent gets memories relevant to the area it's working in, ordered by how specific the layer is.
-- **Hooks prompt at the right moments**, six editor hooks fire across the session lifecycle so capture and recall happen without the agent (or you) needing to remember to call a tool.
-- **File-per-memory in your repo**, each memory is a JSON file under `.aide/memories/`. `git add`, `git push`, `git pull` is the team-sync path. Personal preferences are gitignored; team-shared memories travel with the repo.
-- **Cross-tool memory store**, Claude Code and Cursor read the same `.aide/` directory today; further editor support may come based on user feedback.
-- **Local-first**, SQLite cache and JSON files on your machine. Anonymized usage counts ship to PostHog by default; disable with `AIDE_TELEMETRY=off`.
-
-The grid below maps how each of the three tools covers each axis.
+- **Layered + scoped recall.** Four typed memory layers (preferences / technical / area_context / guidelines) plus glob scopes (e.g. `src/auth/**`). The agent gets memories relevant to the area it's working in, ordered by how specific the layer is.
+- **Hooks prompt at the right moments.** Six editor hooks fire across the session lifecycle so capture and recall happen without anyone needing to remember to call a tool.
+- **Memories as JSON files in your repo.** One file per memory under `.aide/memories/`. `git add`, `git push`, `git pull` is the team-sync path. Personal preferences are gitignored; team-shared memories travel with the repo.
+- **Single shared store across editors.** Claude Code and Cursor read the same `.aide/` directory, so a memory captured in one tool is visible to the other tool's agent without per-editor configuration.
+- **Local-first.** SQLite cache and JSON files on your machine. Anonymized usage counts ship to PostHog by default; disable with `AIDE_TELEMETRY=off`.
 
 ## Feature comparison
 
 | Feature | aide-memory | claude-mem | engram |
 |---|---|---|---|
-| **Capture mechanism** | Six hooks pre-wired across the session lifecycle at `aide-memory init` | Session-end summarization that emits the next session's context | Opt-in session-end hook script you copy in and configure |
-| **Recall mechanism** | Small (~20 token) nudge per file read; agent decides which memories to fetch | Inject context from recent sessions at session start; 3-layer MCP search workflow (search → timeline → get_observations) on demand | Namespace-scoped retrieval against typed memory store |
-| **Scoping model** | Glob patterns with inheritance (e.g. `src/auth/**`) inside a project | Folder granularity via auto-generated per-project-folder Folder Context Files | Namespace per project or agent, with opt-in cross-namespace recall |
-| **Memory structure** | 4 typed layers: preferences, technical, area_context, guidelines | Folder activity timelines + observations | 3 types: Episodic, Semantic (knowledge graph), Procedural |
-| **Storage** | Local JSON files + SQLite cache | Chroma (vector DB) + Bun-managed worker service | Local store (per-namespace) |
-| **Install** | `npx aide-memory init` | `npx claude-mem install` (manages Bun + uv) | npm package |
-| **Team sync** | Native via git: memories are JSON files in `.aide/`, commit to share with teammates | No built-in team-sync workflow | No built-in team-sync workflow |
-| **Personal/shared split** | Yes: `preferences/personal/` (gitignored) and `preferences/shared/` (committed) | n/a | n/a |
-| **Compaction handling** | PreCompact hook clears session tracking so the post-compact turn re-prompts cleanly; rules file nudges the agent to call `aide_remember` for active decisions | Session-end summarization | Session-end hook (opt-in) |
-| **Cross-tool** | Claude Code + Cursor read the same store today | Claude Code | Tool-agnostic via MCP |
+| **Capture mechanism** | Six hooks pre-wired at `aide-memory init` (SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop, PreCompact) | Continuous: PostToolUse hook captures observations during the session via a Bun worker; Stop hook generates a session summary | Optional `claude-code-hook.sh` script you copy in and wire to the SessionEnd hook |
+| **Recall mechanism** | Per-file nudge ("N memories exist for this path") on the agent's read; agent calls `aide_recall` for the relevant subset | SessionStart injects compressed context from recent sessions; on-demand 3-tool MCP search workflow (search → timeline → get_observations) | Multi-step retrieval pipeline (vector search + knowledge-graph expand + scoring) within a namespace |
+| **Scoping model** | Glob patterns with inheritance (`src/auth/**`, `packages/api/**`) | Project-wide by default; opt-in per-folder Folder Context Files (`CLAUDE_MEM_FOLDER_CLAUDEMD_ENABLED`) for subfolder timelines | Namespace per project or agent, with opt-in cross-namespace recall |
+| **Memory structure** | 4 typed layers: preferences, technical, area_context, guidelines | Observations + session summaries, optionally per-folder timelines | 3 typed memory types (Episodic, Semantic, Procedural) on a knowledge graph, plus a Working type assembled at query time |
+| **Storage** | JSON files in repo + local SQLite cache | SQLite (FTS5) primary; optional Chroma for semantic search; Bun-managed worker on a local port | SQLite (default) or PostgreSQL/pgvector + HNSW vector index |
+| **Install** | `npx aide-memory init` | `npx claude-mem install` (manages Bun + uv automatically) | npm package, plus optional Smithery 1-click for Claude Desktop |
+| **Editor support** | Claude Code, Cursor (full hook + MCP wiring) | Claude Code, Cursor, Gemini CLI, OpenCode, OpenClaw | MCP-first (any MCP host), plus REST / CLI / webhooks / Ollama proxy |
+| **Team sync** | Native via git: memories are JSON files in `.aide/`, commit to share with teammates | No git-as-sync workflow; per-machine summaries and observations | No git-as-sync workflow; JSON export/import exists but isn't a team flow |
+| **Personal/shared split** | Yes: `preferences/personal/` (gitignored), `preferences/shared/` (committed) | Not modeled | Not modeled |
 | **License** | Proprietary freeware (free to use, source not public) | AGPL-3.0 | MIT |
 | **Price** | Free tier; potential team / pro tiers later | Free | Free |
 
-## How each tool's approach differs
+## How each approach differs
 
-**Per-file nudge vs session-start dump.** aide-memory injects a small (~20 token) nudge when the agent opens a file with scoped memories and lets the agent decide whether to call `aide_recall`. claude-mem injects context from recent sessions at session start and exposes search tools for on-demand detail. engram retrieves from typed namespaced stores. Different tradeoffs: per-file recall is precise but depends on file reads; session-start injection is comprehensive but pays a token cost up front.
+**Continuous capture vs hook-driven categorized capture.** claude-mem's PostToolUse hook captures observations as the agent works, then the Stop hook compresses them into a session summary that gets injected into the next session. aide-memory's six hooks each do a specific thing (correction detection, file-read prompt, periodic reflection, pre-compact tracking-clear, etc.) and the captures are typed at the moment they happen. Different shapes; both run automatically.
 
-**Glob-pattern path scoping inside a project.** A memory about test utilities can be scoped to `tests/**` so it surfaces only when the agent is in test code. claude-mem scopes by folder via Folder Context Files (per-folder CLAUDE.md activity timelines). engram scopes by namespace (per project or agent). Same goal, different granularities.
+**Per-file scoped recall vs session-start injection.** aide-memory's recall fires when the agent reads a specific file: only memories whose scope matches that path surface, ranked by layer + scope specificity. claude-mem injects a compressed digest of recent sessions at the start of every new session, with on-demand search tools to drill down. aide-memory leans toward "narrow + relevant"; claude-mem leans toward "broad + searchable."
 
-**Hooks pre-wired at init.** aide-memory configures hooks at six lifecycle events (SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop, PreCompact) the moment you run `aide-memory init`. engram offers an opt-in session-end hook script you wire in. claude-mem handles capture through its session lifecycle. If you want capture wired up without manual config, that's the aide-memory default.
+**Layered typology vs free-form observations.** aide-memory enforces four memory layers at storage time so recall can prioritize correctly. claude-mem's primary unit is "observations" plus session summaries; the structure is looser by design. engram's three cognitive-architecture types (Episodic / Semantic / Procedural) sit on a knowledge graph, which lets engram do graph-expansion and contradiction detection at recall time that aide-memory and claude-mem don't.
 
-**Files as storage substrate.** aide-memory's memories live as JSON files inside `.aide/` next to your code, so `git add` / `git commit` / `git pull` is the team-sync path. claude-mem and engram use vector / typed stores instead, which trade the file-level workflow for richer query semantics. Pick the model that matches how your team already works.
+**Files-in-repo as the substrate.** aide-memory's `.aide/memories/` lives next to your code so `git add` / `git push` / `git pull` is the team-sync path. claude-mem and engram use database-backed stores (SQLite / Chroma / Postgres / vector indexes); they offer richer query semantics but don't have a built-in team-share workflow over git.
 
-**Four typed layers vs three vs none.** aide-memory: preferences (how a contributor works), technical (facts about the stack), area_context (decisions for a code area), guidelines (team principles). engram: Episodic / Semantic / Procedural (closer to a cognitive-architecture framing). claude-mem: folder timelines + observations (no fixed layer typology). All valid; the right one depends on the kinds of memories you want to capture.
+**Editor reach.** claude-mem ships full hook integrations for Claude Code, Cursor, Gemini CLI, OpenCode, and OpenClaw today. aide-memory ships full integrations for Claude Code and Cursor with the same `.aide/` directory shared between them; further editor adapters may come based on user feedback. engram is MCP-first and works with any MCP host, plus has REST / CLI / webhooks / a transparent Ollama proxy.
 
-**Personal vs team split.** aide-memory's preferences folder splits into `personal/` (gitignored) and `shared/` (committed) so personal style stays personal but team conventions travel with the repo. claude-mem and engram don't model this distinction at the storage layer.
+**Personal vs team split at the storage layer.** aide-memory splits `preferences/` into `personal/` (gitignored) and `shared/` (committed) so personal style stays personal but team conventions travel with the repo. The other two tools don't model this at the storage layer.
 
 ## When to pick each
 
-- **aide-memory** when you want layered, scoped, auto-captured memory that travels with the repo so your teammates' agents pick up what yours learned. Solo developer or team; aide-memory leans into both. Improving session handoff (so context from one session can carry to the next without manual capture) is on the roadmap.
-- **claude-mem** when you want session-summary-driven context-on-startup tied to Claude Code's folder structure, with a search-and-drill-down workflow.
-- **engram** when you want a tool-agnostic cognitive-architecture store with three typed memory categories and namespace isolation.
+- **aide-memory** if you want categorized, scoped, auto-captured memory that travels with the repo via git so your teammates' agents pick up what yours learned. Good for solo developers; built with teams in mind. Session-handoff features (carrying context from one session to the next without manual capture) are on the roadmap.
+- **claude-mem** if you want continuous, broad capture with session-start context injection and a search workflow for drilling down, with editor reach across Claude Code, Cursor, Gemini CLI, OpenCode, and OpenClaw.
+- **engram** if you want a cognitive-architecture-style memory system with a knowledge graph, graph-expansion at recall, contradiction detection, and a tool-agnostic MCP / REST surface.
+
+These aren't mutually exclusive. They live in different MCP slots and don't conflict at the storage layer; running more than one is fine if your needs span the shapes.
 
 ## Where aide-memory sits relative to rules files and skills
 
-aide-memory isn't built to replace `CLAUDE.md`, `.cursorrules`, skills, or any other static-context mechanism your editor already provides. Those are great at "always-on, always-injected" knowledge: project-wide style, security rules, the things every turn needs.
+aide-memory isn't built to replace `CLAUDE.md`, `.cursorrules`, skills, or any other static-context mechanism your editor already provides. Those work well for "always-on, always-injected" knowledge: project-wide style, security rules, things every turn needs.
 
-aide-memory fills in the gaps those static surfaces leave open:
+aide-memory covers the gaps those static surfaces leave open:
 
-- **Knowledge that should only surface in some areas of code**, not in every turn.
-- **Knowledge that should be captured automatically when corrections, decisions, or non-obvious findings happen**, not manually pasted into a rules file later.
-- **Knowledge that needs to stay in sync across teammates** without each person manually editing the same `CLAUDE.md` and merging conflicts.
-- **Knowledge that needs to be categorized** (preferences vs technical vs area decisions vs team guidelines) so recall can prioritize correctly.
+- **Knowledge that should surface only in some areas of code**, not on every turn.
+- **Knowledge that should be captured automatically when corrections, decisions, or non-obvious findings happen**, not pasted into a rules file later.
+- **Knowledge that needs to stay in sync across teammates** without each person editing the same `CLAUDE.md` and merging conflicts.
+- **Knowledge that benefits from typing** (preferences vs technical vs area decisions vs team guidelines) so recall can prioritize correctly.
 
-Run aide-memory alongside your existing rules files and skills. They cover the static, always-relevant rails; aide-memory covers the dynamic, scoped, growing-with-the-code knowledge.
+Run aide-memory alongside your rules files and skills. They cover the static, always-relevant rails; aide-memory covers the dynamic, scoped, growing-with-the-code knowledge.
