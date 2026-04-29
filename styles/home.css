@@ -109,6 +109,7 @@
 .copy-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 0.35rem;
   background: none;
   border: none;
@@ -119,6 +120,13 @@
   font-size: 0.78rem;
   font-family: inherit;
   transition: color 0.2s, background 0.2s;
+  min-width: 78px;
+}
+
+.copy-btn-label {
+  display: inline-block;
+  min-width: 48px;
+  text-align: left;
 }
 
 .copy-btn:hover {
@@ -137,12 +145,113 @@
 .copy-btn-label {
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  display: inline-block;
+  min-width: 48px;
+  text-align: left;
 }
 
 .hero-stats {
   font-size: 0.85rem;
   color: #64748b;
   margin-bottom: 1.75rem;
+}
+
+.hero-brand {
+  display: inline-block;
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', ui-monospace, monospace;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  color: #5fe1e6;
+  margin-bottom: 1rem;
+}
+
+.hero-team-note {
+  margin: 0.5rem 0 1.5rem;
+  font-size: 1rem;
+  color: #94a3b8;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+html[class~="light"] .hero-team-note {
+  color: #475569;
+}
+
+/* Subscribe section */
+.subscribe-section {
+  padding: 1rem 1.5rem 2rem;
+  max-width: 520px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.subscribe-section h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0 0 0.4rem;
+  letter-spacing: -0.01em;
+}
+
+.subscribe-section p {
+  color: #94a3b8;
+  font-size: 0.92rem;
+  margin: 0 0 1rem;
+}
+
+.subscribe-form {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.subscribe-form input[type="email"] {
+  flex: 1 1 240px;
+  max-width: 320px;
+  padding: 0.6rem 0.9rem;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+.subscribe-form input[type="email"]:focus {
+  outline: none;
+  border-color: #0b8a91;
+}
+
+.subscribe-form button[type="submit"] {
+  padding: 0.6rem 1.2rem;
+  background: #0b8a91;
+  color: #f1f5f9;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.subscribe-form button[type="submit"]:hover {
+  background: #14b8a6;
+}
+
+html[class~="light"] .subscribe-section h2 {
+  color: #0f172a;
+}
+
+html[class~="light"] .subscribe-section p {
+  color: #475569;
+}
+
+html[class~="light"] .subscribe-form input[type="email"] {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #1e293b;
 }
 
 .hero-actions {

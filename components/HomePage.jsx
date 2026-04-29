@@ -47,10 +47,12 @@ export default function HomePage() {
         <div className="hero-grid" />
 
         <div className="hero-content">
-          <div className="hero-badge">Auto-captured &amp; recalled &middot; Path-scoped &middot; Team-synced &middot; Cross-tool</div>
+          <div className="hero-brand">aide-memory</div>
+          <div className="hero-badge">Auto-captured. Auto-recalled. Path-scoped. Team-synced. Cross-tool.</div>
           <h1 className="hero-title">
-            Persistent memory for your <span className="hero-highlight">codebase.</span>
+            Your agent <span className="hero-highlight">remembers.</span>
           </h1>
+          <p className="hero-team-note">And your team&apos;s agents too.</p>
           <p className="hero-subtitle">
             Categorized, path-scoped, auto-captured memory for AI coding agents and teams.
           </p>
@@ -83,7 +85,7 @@ export default function HomePage() {
         <div className="problem-grid">
           <div className="problem-card">
             <h3>Rules files don&apos;t scale</h3>
-            <p>One flat file, no path scoping, no categorized layers, manual to update. They get injected globally on every turn, even when most of the content isn&apos;t relevant to the file the agent just opened.</p>
+            <p>One flat file, no path scoping, no categorized layers, manual to update. They get injected globally on every turn, even when most of it isn&apos;t relevant to the file the agent just opened, costing tokens and crowding context for things that don&apos;t apply.</p>
           </div>
           <div className="problem-card">
             <h3>Cross-session and cross-teammate gaps</h3>
@@ -105,48 +107,48 @@ export default function HomePage() {
         <div className="features-grid">
           <div className="feature-card">
             <div className="feature-icon">&#x1f9e0;</div>
-            <h3>Hooks prompt at the right moments</h3>
-            <p>SessionStart and PreToolUse prompt the agent to recall when memories exist for the path. UserPromptSubmit prompts to remember on corrections. Stop prompts a periodic reflection. PreCompact prompts to save before context loss.</p>
+            <h3>Prompted at the right moments</h3>
+            <p>When the agent opens a relevant file, it gets prompted to recall what you&apos;ve taught it. When you correct it or make a decision, it gets prompted to remember.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f4cd;</div>
             <h3>Path-scoped, layered recall</h3>
-            <p>Glob scopes (<code>src/auth/**</code>, <code>packages/api/**</code>) plus four categorized layers (preferences, technical, area context, guidelines). Only the memories relevant to the file the agent just opened, ordered by how specific each layer is.</p>
+            <p>Memories attach to the code area they apply to (<code>src/auth/**</code>, <code>packages/api/**</code>) and to one of four categorized layers. Only what&apos;s relevant for the file the agent just opened.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f465;</div>
             <h3>Git-synced for teams</h3>
-            <p>Memories are JSON files in <code>.aide/memories/</code>. Scopes are relative paths so they work on every machine. Commit, push, pull, your teammates&apos; agents pick up the same memories. Private preferences are gitignored by default; per-call you can override.</p>
+            <p>Memories are JSON files in your repo. Commit, push, pull, your teammates&apos; agents pick up the same context. Private preferences stay gitignored.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f504;</div>
             <h3>Project memory, not tool memory</h3>
-            <p>Memories belong to your project, not to whichever tool you&apos;re using to talk to the agent. Switch from Claude Code to Cursor (or vice versa, or to a teammate&apos;s machine) and your project&apos;s memory store is right there. More editor adapters may come depending on user feedback.</p>
+            <p>Memories belong to your project, not to whichever tool you&apos;re using. Switch tools or hand off to a teammate and the memory store comes with the codebase.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x26a1;</div>
             <h3>Nudge, don&apos;t dump</h3>
-            <p>The agent gets a small (~20 token) nudge that memories exist for the path it&apos;s about to read. It decides whether to call <code>aide_recall</code>. No big rules block injected on every turn.</p>
+            <p>A small (~20 token) nudge tells the agent memories exist for the path. The agent decides whether to call them. No big rules block injected on every turn.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f6e0;</div>
-            <h3>Tunable to your team&apos;s flow</h3>
-            <p>The default config captures the common case. The prompting cadence, recall scope dial, injection caps, Stop schedule, and search mode are all tunable. If one part of the flow doesn&apos;t fit, flip one knob.</p>
+            <h3>Tunable to your flow</h3>
+            <p>Defaults capture the common case. Prompt cadence, recall scope, injection caps, and search mode are all tunable.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f512;</div>
             <h3>Local-first storage</h3>
-            <p>Memories live as JSON files in your repo plus a local SQLite cache. Code and memory content never leave your machine. Anonymized usage counts (event type, hashed machine id, platform, Node version) ship to PostHog so we can see which features are used; disable any time with <code>AIDE_TELEMETRY=off</code>.</p>
+            <p>Memories live as JSON files in your repo plus a local SQLite cache. Code and memory content never leave your machine. Anonymized usage counts ship by default; disable with <code>AIDE_TELEMETRY=off</code>.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f4b0;</div>
             <h3>No extra inference cost</h3>
-            <p>aide-memory is a typed store, hook dispatcher, and MCP server. It does no LLM calls of its own. The model in the editor you already use does all the reasoning.</p>
+            <p>aide-memory does no LLM calls of its own. The model in the editor you already use does all the reasoning.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f527;</div>
             <h3>Free</h3>
-            <p>Free to use. More features coming.</p>
+            <p>Free to use. More may be added in the future based on user feedback.</p>
           </div>
         </div>
       </div>
@@ -166,7 +168,7 @@ export default function HomePage() {
             <div className="step-number">2</div>
             <div className="step-content">
               <h3>Work normally</h3>
-              <p>You and your agent talk like usual. When you correct it, the UserPromptSubmit hook prompts the agent to store the correction. The Stop hook periodically prompts the agent to reflect on what was decided in this turn. The rules file written at init also nudges the agent to call <code>aide_remember</code> on important decisions, so capture isn&apos;t purely hook-driven.</p>
+              <p>Talk to your agent like usual. When you correct it or make a decision, it gets prompted to remember. When a session starts, it gets your existing context.</p>
             </div>
           </div>
           <div className="step">
@@ -178,6 +180,24 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="subscribe-section">
+        <h2>Stay in the loop</h2>
+        <p>Occasional updates on aide-memory: new editor adapters, releases, lessons learned. No spam.</p>
+        <form
+          className="subscribe-form"
+          action="https://buttondown.com/api/emails/embed-subscribe/aide-memory"
+          method="post"
+          target="popupwindow"
+          onSubmit={(e) => {
+            const win = window.open('https://buttondown.com/aide-memory', 'popupwindow')
+            if (!win) e.preventDefault()
+          }}
+        >
+          <input type="email" name="email" placeholder="you@example.com" required />
+          <button type="submit">Subscribe</button>
+        </form>
       </div>
 
       <div className="cta-section">

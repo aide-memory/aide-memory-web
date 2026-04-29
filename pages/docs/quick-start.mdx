@@ -4,7 +4,7 @@ Install in seconds. The next time the agent reads a file with a scoped memory, t
 
 ## Prerequisites
 
-- **Node.js 18 or later** for running aide-memory itself (the bundled CLI / hooks / MCP server are JavaScript). Your project's language doesn't matter; aide-memory works with any codebase.
+- **Node.js 20 or later** for running aide-memory itself (the bundled CLI / hooks / MCP server are JavaScript). Node 18 hit end-of-life April 2026, so 20 is the new minimum. Your project's language doesn't matter; aide-memory works with any codebase.
 - **Git** is optional. If you have a git repo, aide-memory uses `git config user.name` for the contributor field, installs a `post-checkout` hook for cache sync, and gitignores the right paths.
 - A **project directory**, with or without `package.json`. aide-memory needs a directory to put `.aide/` in; that's it.
 
