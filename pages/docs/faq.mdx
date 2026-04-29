@@ -28,13 +28,11 @@ The one network surface is anonymized PostHog telemetry, on by default. Each eve
 
 ## How does it compare to claude-mem?
 
-[claude-mem](https://github.com/thedotmack/claude-mem) injects context from recent sessions at session start and exposes a 3-layer MCP search workflow (search → timeline → get_observations) for on-demand detail. aide-memory takes a different approach: a small (~20-token) nudge per file read so the agent decides which memories to recall.
+[claude-mem](https://github.com/thedotmack/claude-mem) is the established project in this space (~70k stars, multi-editor support across Claude Code, Cursor, Gemini CLI, OpenCode, OpenClaw). Its capture is continuous: a PostToolUse hook records observations during the session, and a Stop hook compresses them into a session summary that gets injected at the start of the next session. On-demand drilling is via a 3-tool MCP search workflow.
 
-claude-mem scopes context at folder granularity via auto-generated Folder Context Files (per-project-folder/worktree CLAUDE.md activity timelines). aide-memory uses glob-pattern scoping with inheritance (e.g. `src/auth/**`).
+aide-memory takes a different shape. Capture is event-typed (correction detection, periodic reflection, file-read prompt) rather than continuous; recall is per-file scoped (a small nudge when the agent reads a file with matching memories) rather than session-start broad-injection; storage is JSON files in your repo with git as the team-sync path rather than SQLite + optional Chroma.
 
-claude-mem installs via `npx claude-mem install` and uses Chroma (vector DB) plus a Bun-managed worker service. aide-memory installs via `npx aide-memory init` and stores memories as JSON files plus a local SQLite cache, no extra runtime.
-
-See the [Comparison page](/docs/comparison) for the full table.
+The two tools optimize for different things. claude-mem leans toward broad context with searchable detail; aide-memory leans toward narrow, scoped recall and team handoff via git. See the [Comparison page](/docs/comparison) for the full table.
 
 ## Can I use my own embedding model?
 
