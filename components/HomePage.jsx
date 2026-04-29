@@ -56,7 +56,7 @@ export default function HomePage() {
           </h1>
           <p className="hero-team-note">And your team&apos;s agents too.</p>
           <p className="hero-subtitle">
-            Categorized, path-scoped, auto-captured memory for AI coding agents and teams.
+            Categorized, path-scoped, auto-captured and recalled memory for AI coding agents and teams.
           </p>
 
           <div className="hero-install">
@@ -94,12 +94,12 @@ export default function HomePage() {
             <p>The fix you taught your agent yesterday isn&apos;t in today&apos;s session by default. Your teammates&apos; agents start fresh too, learning some of the same things, some different things, none of it shared.</p>
           </div>
           <div className="problem-card">
-            <h3>Switching tools loses memory</h3>
-            <p>Whether you switch from Claude Code to Cursor, or your teammate uses a different tool than you, project memory should travel. With rules files alone, it doesn&apos;t.</p>
+            <h3>Tool-specific memory</h3>
+            <p>You can copy a CLAUDE.md to .cursorrules manually, but the conventions you teach your agent in one tool don&apos;t carry to the other on their own. Switch tools (or hand off to a teammate on a different tool) and your project context doesn&apos;t come with you unless someone moves the file.</p>
           </div>
           <div className="problem-card">
-            <h3>Manual capture, manual recall</h3>
-            <p>Without aide-memory, capturing context means typing it into a rules file, and recall means hoping the agent reads the right rule at the right time. aide-memory automates both: hooks prompt for capture on corrections and decisions, and prompt for recall when the agent opens a file with relevant scoped memories.</p>
+            <h3>Manual capture, always-on recall</h3>
+            <p>Capturing context to a rules file is a manual edit. Recall is the opposite problem: rules files inject every line, every turn, even when most of it isn&apos;t relevant to the file the agent just opened. aide-memory automates capture (hooks prompt the agent on corrections and decisions) and scopes recall to the relevant area instead of dumping everything.</p>
           </div>
         </div>
       </div>
@@ -110,12 +110,12 @@ export default function HomePage() {
           <div className="feature-card">
             <div className="feature-icon">&#x1f9e0;</div>
             <h3>Prompted at the right moments</h3>
-            <p>When the agent opens a relevant file, it gets prompted to recall what you&apos;ve taught it. When you correct it or make a decision, it gets prompted to remember.</p>
+            <p>When the agent opens a relevant file, it gets prompted to recall what was already learned for that area. When you correct the agent, the hook detects the correction and prompts it to store the lesson. Decisions and non-obvious findings are picked up via the periodic Stop reflection.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f4cd;</div>
-            <h3>Path-scoped, layered recall</h3>
-            <p>Memories attach to the code area they apply to (<code>src/auth/**</code>, <code>packages/api/**</code>) and to one of four categorized layers. Only what&apos;s relevant for the file the agent just opened.</p>
+            <h3>Scoped, layered recall</h3>
+            <p>Memories attach to the code area they apply to (<code>src/auth/**</code>, <code>packages/api/**</code>) and to one of four categorized layers. The agent gets back what&apos;s relevant to that scope, not the whole rules file.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f465;</div>
@@ -130,7 +130,7 @@ export default function HomePage() {
           <div className="feature-card">
             <div className="feature-icon">&#x26a1;</div>
             <h3>Nudge, don&apos;t dump</h3>
-            <p>A small (~20 token) nudge tells the agent memories exist for the path. The agent decides whether to call them. No big rules block injected on every turn.</p>
+            <p>When a relevant file is opened and memories haven&apos;t been recalled this session, a small (~20 token) nudge tells the agent that memories exist for the path; the agent decides which ones to pull. The aide-memory rules file (small) is injected per turn so the agent knows when to use the MCP tools, but memory bodies themselves come in on demand.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f6e0;</div>
@@ -144,13 +144,13 @@ export default function HomePage() {
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f4b0;</div>
-            <h3>No extra inference cost</h3>
-            <p>aide-memory does no LLM calls of its own. The model in the editor you already use does all the reasoning.</p>
+            <h3>Uses your existing agent</h3>
+            <p>aide-memory does no LLM calls of its own. The model in the editor you already pay for does all the reasoning. Your token bill is what the agent spends on tool descriptors plus the recall payloads it pulls (scoped to the file it&apos;s touching), not a separate inference layer.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f527;</div>
             <h3>Free</h3>
-            <p>Free to use. More features or tiers may be added based on user feedback.</p>
+            <p>Free to use. More features or tiers may be added.</p>
           </div>
         </div>
       </div>
@@ -169,16 +169,16 @@ export default function HomePage() {
           <div className="step">
             <div className="step-number">2</div>
             <div className="step-content">
-              <h3>Work normally</h3>
-              <p>When a session starts, your agent loads existing context. When it opens or edits a relevant file, it gets prompted to recall what you've taught it. When you correct it, decide something, or surface a non-obvious finding, it gets prompted to remember. Periodic reflections at the end of turns and a save-prompt before context compacts round out the loop.</p>
+              <h3>Capture as you work</h3>
+              <p>When you correct the agent, the correction is detected and the agent gets prompted to store the lesson. At the end of a turn, a periodic reflection nudges the agent to save any decisions or non-obvious findings. Before context compaction, session tracking is cleared so the next turn re-prompts cleanly.</p>
             </div>
           </div>
           <div className="step">
             <div className="step-number">3</div>
             <div className="step-content">
-              <h3>Next session or next teammate</h3>
+              <h3>Recall in your next session, or your teammate&apos;s</h3>
               <code className="step-code">8 memories exist for src/checkout/**. Call aide_recall if relevant.</code>
-              <p>If memories exist for the path the agent just opened and haven&apos;t been recalled this session, the hook prompts <code>aide_recall</code>. Commit <code>.aide/memories/</code> and your teammates&apos; agents pick up the same memories on their next read of the same area.</p>
+              <p>When the agent opens a file with un-recalled scoped memories, the hook prompts <code>aide_recall</code> and the agent pulls back only what applies to that area. Commit <code>.aide/memories/</code> and your teammates&apos; agents pick up the same memories on their next read of the same area.</p>
             </div>
           </div>
         </div>
@@ -186,7 +186,7 @@ export default function HomePage() {
 
       <div className="subscribe-section">
         <h2>Stay in the loop</h2>
-        <p>Occasional updates on aide-memory: new editor adapters and releases. No spam.</p>
+        <p>Occasional updates on aide-memory: new editor adapters and releases.</p>
         <form
           className="subscribe-form"
           action="https://buttondown.com/api/emails/embed-subscribe/aide-memory"
