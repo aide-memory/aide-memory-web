@@ -102,6 +102,18 @@ export default function HomePage() {
         </div>
       </div>
 
+      <div className="demo-section">
+        <h2>See it in action</h2>
+        <video
+          src="/demo.mp4"
+          autoPlay
+          muted
+          playsInline
+          loop
+          style={{ width: '100%', maxWidth: '800px', borderRadius: '8px', margin: '0 auto', display: 'block' }}
+        />
+      </div>
+
       <div className="features-section">
         <h2 className="section-heading">How it&apos;s built different</h2>
         <div className="features-grid">
