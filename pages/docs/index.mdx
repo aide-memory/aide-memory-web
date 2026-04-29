@@ -52,12 +52,12 @@ Recall ordering: `area_context` ranks first (most specific to a code area), then
 
 ### 3. Four categorized layers
 
-| Layer | Purpose | Example |
+| Layer | What it captures | Example |
 |---|---|---|
-| **preferences** | How an individual contributor likes to structure code | "I write component files as `Component/index.tsx` + `Component/Component.test.tsx`, never co-located in the parent dir" |
+| **preferences** | An individual contributor's coding style or workflow | "I write component files as `Component/index.tsx` + `Component/Component.test.tsx`, never co-located in the parent dir" |
 | **technical** | Facts about the stack not obvious from code | "Apollo client uses persisted query hashes; raw queries 404 in prod" |
-| **area_context** | Decisions for a specific code area | "The billing module is event-sourced; new code appends events, never mutates balances directly" |
-| **guidelines** | Team-wide principles | "Public API responses use `{error: {code, message}}` envelopes for any non-2xx status" |
+| **area_context** | A decision or constraint specific to a code area | "The billing module is event-sourced; new code appends events, never mutates balances directly" |
+| **guidelines** | A team-wide or project-wide principle | "Public API responses use `{error: {code, message}}` envelopes for any non-2xx status" |
 
 `preferences` further splits into `personal/` (gitignored, private to you) and `shared/` (committed, team-visible). The other three layers are team-visible by default. The default of `shared` for new preferences is configurable per-project; per-call, you can always override.
 

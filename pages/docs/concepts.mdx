@@ -31,12 +31,12 @@ A memory is a single JSON file under `.aide/memories/<layer>/`. It captures one 
 
 Layers separate **how** the knowledge is used. Recall and injection are prioritized by layer, so the agent gets the most context-relevant entries first.
 
-| Layer | Use when | Example |
+| Layer | What it captures | Example |
 |---|---|---|
-| `preferences` | How an individual contributor likes to structure code | "I write component files as `Component/index.tsx` + `Component/Component.test.tsx`, never co-located in the parent dir" |
+| `preferences` | An individual contributor's coding style or workflow | "I write component files as `Component/index.tsx` + `Component/Component.test.tsx`, never co-located in the parent dir" |
 | `technical` | Facts about the stack not obvious from code | "Apollo client uses persisted query hashes; raw queries 404 in prod" |
-| `area_context` | Decisions and context for a specific code area | "The billing module is event-sourced; new code appends events, never mutates balances directly" |
-| `guidelines` | Team-wide or project-wide principles | "Public API responses use `{error: {code, message}}` envelopes for any non-2xx status" |
+| `area_context` | A decision or constraint specific to a code area | "The billing module is event-sourced; new code appends events, never mutates balances directly" |
+| `guidelines` | A team-wide or project-wide principle | "Public API responses use `{error: {code, message}}` envelopes for any non-2xx status" |
 
 `preferences` further splits into `personal/` (gitignored) and `shared/` (committed). The other three layers are team-visible by default.
 

@@ -21,6 +21,8 @@ Both share the same store, so a memory stored via `aide_remember` is the same on
 
 CLI-only operations (no MCP equivalent today): `init`, `stats`, `recall-log`, `config`, `sync`, `cleanup`. See the [CLI-only operations](#cli-only-operations) section.
 
+**MCP schema cost.** The seven tools' combined descriptors are around 2,900 tokens (`aide_recall` ~550, `aide_remember` ~860, `aide_update` ~430, `aide_search` ~380, `aide_import` ~310, `aide_memories` ~250, `aide_forget` ~120). For comparison, GitHub's MCP server is ~54k tokens. The cost lands once per session in the agent's tool list, regardless of how often you call the tools.
+
 ---
 
 ## Recall
@@ -337,11 +339,11 @@ Initialize a new `.aide/` project directory.
 
 ```bash
 aide-memory init                # standard
-aide-memory init --update-rules # refresh rules files only (idempotent)
+aide-memory init --update-rules # refresh rules files only (safe to run repeatedly)
 aide-memory init --force        # overwrite existing files
 ```
 
-Creates `.aide/`, six hooks, MCP config, rules files for both editors, `.aide/config.json` seeded with every public setting, `.aide/config-reference.md`. Adds `.gitignore` entries for `.aide/cache/` and `.aide/memories/preferences/personal/`. Both `init` and `init --update-rules` are idempotent for the rules-file regeneration; running them again writes the same template content.
+Creates `.aide/`, six hooks, MCP config, rules files for both editors, `.aide/config.json` seeded with every public setting, `.aide/config-reference.md`. Adds `.gitignore` entries for `.aide/cache/` and `.aide/memories/preferences/personal/`. Both `init` and `init --update-rules` are safe to run repeatedly; the rules files get rewritten with the latest template content each time.
 
 ### `aide-memory stats`
 
