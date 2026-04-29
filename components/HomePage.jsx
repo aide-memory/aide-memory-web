@@ -17,16 +17,18 @@ function CopyButton({ text }) {
       title={copied ? 'Copied' : 'Copy to clipboard'}
       aria-label={copied ? 'Copied' : 'Copy to clipboard'}
     >
-      {copied ? (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      ) : (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-        </svg>
-      )}
+      <span style={{ width: 16, height: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+        {copied ? (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" preserveAspectRatio="xMidYMid meet">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        ) : (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" preserveAspectRatio="xMidYMid meet">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+        )}
+      </span>
       <span className="copy-btn-label">{copied ? 'copied' : 'copy'}</span>
     </button>
   )
@@ -148,7 +150,7 @@ export default function HomePage() {
           <div className="feature-card">
             <div className="feature-icon">&#x1f527;</div>
             <h3>Free</h3>
-            <p>Free to use. More may be added in the future based on user feedback.</p>
+            <p>Free to use. More features or tiers may be added based on user feedback.</p>
           </div>
         </div>
       </div>
@@ -168,13 +170,13 @@ export default function HomePage() {
             <div className="step-number">2</div>
             <div className="step-content">
               <h3>Work normally</h3>
-              <p>Talk to your agent like usual. When you correct it or make a decision, it gets prompted to remember. When a session starts, it gets your existing context.</p>
+              <p>When a session starts, your agent loads existing context. When it opens or edits a relevant file, it gets prompted to recall what you've taught it. When you correct it, decide something, or surface a non-obvious finding, it gets prompted to remember. Periodic reflections at the end of turns and a save-prompt before context compacts round out the loop.</p>
             </div>
           </div>
           <div className="step">
             <div className="step-number">3</div>
             <div className="step-content">
-              <h3>Next session, next teammate</h3>
+              <h3>Next session or next teammate</h3>
               <code className="step-code">8 memories exist for src/checkout/**. Call aide_recall if relevant.</code>
               <p>If memories exist for the path the agent just opened and haven&apos;t been recalled this session, the hook prompts <code>aide_recall</code>. Commit <code>.aide/memories/</code> and your teammates&apos; agents pick up the same memories on their next read of the same area.</p>
             </div>
@@ -184,7 +186,7 @@ export default function HomePage() {
 
       <div className="subscribe-section">
         <h2>Stay in the loop</h2>
-        <p>Occasional updates on aide-memory: new editor adapters, releases, lessons learned. No spam.</p>
+        <p>Occasional updates on aide-memory: new editor adapters and releases. No spam.</p>
         <form
           className="subscribe-form"
           action="https://buttondown.com/api/emails/embed-subscribe/aide-memory"

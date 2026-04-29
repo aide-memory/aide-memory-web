@@ -110,7 +110,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 0.35rem;
+  gap: 0.4rem;
   background: none;
   border: none;
   color: #64748b;
@@ -120,12 +120,19 @@
   font-size: 0.78rem;
   font-family: inherit;
   transition: color 0.2s, background 0.2s;
-  min-width: 78px;
+  min-width: 96px;
+  box-sizing: border-box;
+}
+
+.copy-btn svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
 }
 
 .copy-btn-label {
   display: inline-block;
-  min-width: 48px;
+  min-width: 56px;
   text-align: left;
 }
 
@@ -145,9 +152,6 @@
 .copy-btn-label {
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  display: inline-block;
-  min-width: 48px;
-  text-align: left;
 }
 
 .hero-stats {
@@ -157,20 +161,27 @@
 }
 
 .hero-brand {
-  display: inline-block;
+  display: block;
   font-family: 'SF Mono', 'Fira Code', 'Fira Mono', ui-monospace, monospace;
   font-size: 0.95rem;
   letter-spacing: 0.05em;
   color: #5fe1e6;
-  margin-bottom: 1rem;
+  margin: 0 auto 1rem;
 }
 
 .hero-team-note {
   margin: 0.5rem 0 1.5rem;
-  font-size: 1rem;
+  font-size: 2rem;
   color: #94a3b8;
   font-weight: 500;
-  letter-spacing: 0.01em;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+}
+
+@media (max-width: 768px) {
+  .hero-team-note {
+    font-size: 1.5rem;
+  }
 }
 
 html[class~="light"] .hero-team-note {

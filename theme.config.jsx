@@ -3,7 +3,7 @@ export default {
   project: {
     link: 'https://github.com/aide-memory/aide-memory',
   },
-  docsRepositoryBase: 'https://github.com/aide-memory/aide-memory/tree/main/docs',
+  docsRepositoryBase: 'https://github.com/aide-memory/aide-memory-web/tree/main',
   footer: {
     content: 'AIDE Memory © 2026, persistent memory for AI coding agents',
   },
