@@ -77,6 +77,17 @@ export default function HomePage() {
         </div>
       </div>
 
+      <div className="demo-section" style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem 1rem' }}>
+        <video
+          src="/demo.mp4"
+          autoPlay
+          muted
+          playsInline
+          loop
+          style={{ width: '100%', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}
+        />
+      </div>
+
       <div className="problem-section">
         <h2>The gap aide-memory closes</h2>
         <p className="problem-lead">
@@ -100,18 +111,6 @@ export default function HomePage() {
             <p>Capturing context means manually editing a rules file. Recall is unscoped: the whole file gets injected every turn whether it&apos;s relevant or not. aide-memory automates capture via hooks and scopes recall to the area the agent is working in.</p>
           </div>
         </div>
-      </div>
-
-      <div className="demo-section">
-        <h2>See it in action</h2>
-        <video
-          src="/demo.mp4"
-          autoPlay
-          muted
-          playsInline
-          loop
-          style={{ width: '100%', maxWidth: '800px', borderRadius: '8px', margin: '0 auto', display: 'block' }}
-        />
       </div>
 
       <div className="features-section">
