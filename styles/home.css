@@ -4,12 +4,12 @@
 /* Hero */
 .hero-wrapper {
   position: relative;
-  min-height: 70vh;
+  min-height: 60vh;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: 3.5rem 1.5rem 2rem;
+  padding: 3rem 1.5rem 1rem;
 }
 
 .hero-grid {
@@ -190,7 +190,7 @@
 
 /* Problem section */
 .problem-section {
-  padding: 1rem 1.5rem 3rem;
+  padding: 0.5rem 1.5rem 2.5rem;
   max-width: 1100px;
   margin: 0 auto;
   text-align: center;

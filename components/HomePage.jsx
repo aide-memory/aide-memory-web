@@ -49,14 +49,10 @@ export default function HomePage() {
         <div className="hero-content">
           <div className="hero-badge">Auto-captured &amp; recalled &middot; Path-scoped &middot; Team-synced &middot; Cross-tool</div>
           <h1 className="hero-title">
-            Your agent <span className="hero-highlight">remembers.</span>
-            <br />
-            Your team&apos;s agents remember too.
+            Persistent memory for your <span className="hero-highlight">codebase.</span>
           </h1>
           <p className="hero-subtitle">
-            Layered, path-scoped, automatically-captured memory for AI coding agents.
-            <br />
-            Works across sessions, tools, and teammates.
+            Categorized, path-scoped, auto-captured memory for AI coding agents and teams.
           </p>
 
           <div className="hero-install">
@@ -80,28 +76,26 @@ export default function HomePage() {
       </div>
 
       <div className="problem-section">
-        <h2>The problem aide-memory solves</h2>
+        <h2>The gap aide-memory closes</h2>
         <p className="problem-lead">
-          Static rules files (CLAUDE.md, .cursorrules) get stale, miss area-specific context, and live as one giant file with no scoping.
-          You teach your agent the same thing every session. Your teammates teach their agents the same things you taught yours.
-          Switch from Claude Code to Cursor and the lesson is gone.
+          Static rules files (CLAUDE.md, .cursorrules) and skills cover always-on guidance and procedures. They&apos;re a starting point, but they don&apos;t do scoped, layered, auto-captured project memory. aide-memory adds that layer.
         </p>
         <div className="problem-grid">
           <div className="problem-card">
             <h3>Rules files don&apos;t scale</h3>
-            <p>One flat file, no path scoping, no layers, no auto-capture. Becomes noise as it grows; nobody updates it; drifts from reality.</p>
+            <p>One flat file, no path scoping, no categorized layers, manual to update. They get injected globally on every turn, even when most of the content isn&apos;t relevant to the file the agent just opened.</p>
           </div>
           <div className="problem-card">
-            <h3>Every agent re-learns</h3>
-            <p>The fix you taught yesterday is gone tomorrow. The decision your teammate made last sprint isn&apos;t in your agent&apos;s context. &quot;Works on my agent&quot; is the new &quot;works on my machine.&quot;</p>
+            <h3>Cross-session and cross-teammate gaps</h3>
+            <p>The fix you taught your agent yesterday isn&apos;t in today&apos;s session by default. Your teammates&apos; agents start fresh too, learning some of the same things, some different things, none of it shared.</p>
           </div>
           <div className="problem-card">
-            <h3>Tool lock-in for context</h3>
-            <p>What you teach Claude Code doesn&apos;t carry to Cursor. What you teach Cursor doesn&apos;t come back. Switching tools costs a week of re-context.</p>
+            <h3>Switching tools loses memory</h3>
+            <p>Whether you switch from Claude Code to Cursor, or your teammate uses a different tool than you, project memory should travel. With rules files alone, it doesn&apos;t.</p>
           </div>
           <div className="problem-card">
-            <h3>Manual capture = no capture</h3>
-            <p>The window for capturing a correction is right after it happens. No agent calls a &quot;remember&quot; tool unprompted. Without hooks, capture rate trends to zero.</p>
+            <h3>Manual capture, manual recall</h3>
+            <p>Without aide-memory, capturing context means typing it into a rules file, and recall means hoping the agent reads the right rule at the right time. aide-memory automates both: hooks prompt for capture on corrections and decisions, and prompt for recall when the agent opens a file with relevant scoped memories.</p>
           </div>
         </div>
       </div>
@@ -126,8 +120,8 @@ export default function HomePage() {
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f504;</div>
-            <h3>Cross-tool memory store</h3>
-            <p>Claude Code and Cursor both read the same <code>.aide/memories/</code>. The memory source travels across tools and teammates; conversation context still belongs to the tool. More editor adapters may come depending on user feedback.</p>
+            <h3>Project memory, not tool memory</h3>
+            <p>Memories belong to your project, not to whichever tool you&apos;re using to talk to the agent. Switch from Claude Code to Cursor (or vice versa, or to a teammate&apos;s machine) and your project&apos;s memory store is right there. More editor adapters may come depending on user feedback.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x26a1;</div>
@@ -141,8 +135,8 @@ export default function HomePage() {
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f512;</div>
-            <h3>Local-first, opt-in telemetry</h3>
-            <p>Memories live as JSON files in your repo plus a local SQLite cache. Code and memory content never leave your machine. Telemetry is opt-in: until you set <code>AIDE_TELEMETRY=on</code>, aide-memory makes zero telemetry network calls.</p>
+            <h3>Local-first storage</h3>
+            <p>Memories live as JSON files in your repo plus a local SQLite cache. Code and memory content never leave your machine. Anonymized usage counts (event type, hashed machine id, platform, Node version) ship to PostHog so we can see which features are used; disable any time with <code>AIDE_TELEMETRY=off</code>.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f4b0;</div>
@@ -151,8 +145,8 @@ export default function HomePage() {
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f527;</div>
-            <h3>Free for individuals today</h3>
-            <p>Proprietary freeware: free to use today. Future enhancements may stay free, or some may ship as separate tiers as the project grows.</p>
+            <h3>Free</h3>
+            <p>Free to use. More features coming.</p>
           </div>
         </div>
       </div>

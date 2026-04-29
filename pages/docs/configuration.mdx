@@ -224,13 +224,13 @@ aide-memory config embeddings.backend none
 
 `@huggingface/transformers` is in `optionalDependencies`; `npm install -g aide-memory` will attempt to install it (npm continues if it fails). Without either backend available, search uses FTS5 keyword (BM25 ranking) with a LIKE fallback.
 
-## Telemetry (opt-in: nothing sent unless you turn it on)
+## Telemetry
 
 aide-memory has two distinct analytics surfaces. Don't conflate them.
 
 **1. Local SQLite analytics (always on, never transmitted).** Tool-call counts and recall events are written to your local SQLite cache at `~/.aide/projects/<hash>/memory.db`. This drives `aide-memory stats`. Purely local; nothing leaves your machine. There is no remote endpoint involved.
 
-**2. Anonymized event tallies to PostHog (opt-in via env var).** Out of the box, **no events are sent**. Until you set `AIDE_TELEMETRY=on` in your environment, aide-memory makes zero network calls for telemetry. When you do opt in, aide-memory sends anonymized event tallies (just counts, no content) so we can see which features are used.
+**2. Anonymized event tallies to PostHog (on by default, env-var to disable).** aide-memory sends anonymized event tallies (just counts, no content) to PostHog so we can see which features are used. Disable any time by setting `AIDE_TELEMETRY=off` in your environment.
 
 **What's sent when opted in:**
 - Event type (`remember`, `recall`, `search`, etc.)
@@ -240,12 +240,12 @@ aide-memory has two distinct analytics surfaces. Don't conflate them.
 
 **What's never sent:** memory content, code, file paths, scope strings, project names, contributor names, query strings, search keywords, recall result content, the number of memories you have, or any other user-identifying data. The events are counts only ("a recall happened on this machine"), no payload.
 
-**Opt in:**
+**Disable:**
 ```bash
-export AIDE_TELEMETRY=on
+export AIDE_TELEMETRY=off
 ```
 
-**Stay opted out (the default):** do nothing. Without `AIDE_TELEMETRY=on`, aide-memory never makes a telemetry network call.
+**Keep on (the default):** do nothing. Anonymized event counts ship in the background; nothing else does.
 
 ## Update checks
 

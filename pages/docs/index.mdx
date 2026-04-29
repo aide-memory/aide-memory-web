@@ -19,7 +19,7 @@ Static rules files (CLAUDE.md, .cursorrules) and skills cover always-on guidance
 - **Categorized layers and path scoping.** A team-wide guideline, a personal preference, a decision-for-this-area, and a fact about the stack all blur into one flat file. They get injected globally on every turn, even when most of it isn't relevant to the file the agent just opened.
 - **Drift across sessions.** Rules files don't always get updated when reality changes; not all area-specific context fits cleanly in one document; updates are manual.
 - **Cross-session and cross-teammate gaps.** The fix you taught your agent yesterday isn't in today's session by default. Your teammates' agents start fresh too. Some of the same things get re-learned, some of the things you learned don't reach them at all.
-- **Tool-specific memory.** What you teach Claude Code today doesn't travel to Cursor (or whatever tool your teammate uses). The memory store should be tool-agnostic; today it isn't.
+- **Tool-specific memory.** What you teach Claude Code today doesn't travel to Cursor (or whatever tool your teammate uses). Project memory should be tool-agnostic; with rules files alone, it isn't.
 - **Capture without auto-recall.** Even if you do capture corrections in a rules file, nothing prompts the agent to recall the relevant subset when it opens a file. Everything gets injected globally or nothing does.
 
 aide-memory addresses each of these without replacing your rules files. They coexist.
@@ -78,9 +78,9 @@ git pull
 
 Memories are files; git is the sync. No sync service, no auth, no daemons.
 
-### 5. Memory store travels across tools
+### 5. Project memory, not tool memory
 
-Same `.aide/memories/` directory is read by Claude Code and Cursor. The memory store goes across tools and teammates. Conversation context (session state, message history) still belongs to the tool you're using. More editor adapters may come depending on user feedback.
+Memories belong to your project, not to whichever tool you're using to talk to the agent. The same `.aide/memories/` directory is read by Claude Code and Cursor today; switch tools or hand off to a teammate and your project's memory store is right there. More editor adapters may come depending on user feedback.
 
 ### 6. No extra inference cost
 

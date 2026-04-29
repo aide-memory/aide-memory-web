@@ -4,7 +4,7 @@ import { Callout } from 'nextra/components'
 
 ## Is it free?
 
-Yes. aide-memory is **proprietary freeware**: free to use today, no usage caps, no memory count limits, no feature gates for solo developers. The plan is to keep core memory features free for solo developers, add more free enhancements over time, and potentially layer paid team / pro features in the future. Source is not public; aide-memory is not open source, not FSL, not Apache 2.0, not MIT.
+Yes. Free to use. More features coming. Source is not public; aide-memory is **proprietary freeware**, not open source.
 
 ## Does it work with Cursor?
 
@@ -20,13 +20,11 @@ Personal preferences live under `.aide/memories/preferences/personal/` and are g
 
 ## Does it send data anywhere?
 
-No, unless you opt in.
+Only anonymized usage counts. Code and memory content **never** leave your machine. Memories are JSON files on your disk; SQLite is a local cache; the MCP server communicates over stdio, not HTTP.
 
-Code and memory content **never** leave your machine. Memories are JSON files on your disk; SQLite is a local cache; the MCP server communicates over stdio, not HTTP.
+The one network surface is anonymized PostHog telemetry, on by default. Each event is just a count (event type, a SHA256-hashed `hostname:username` for deduplication, platform, Node version) so we can see which features are used. Memory content, code, file paths, query strings, the number of memories you have, and any other user-identifying data are never sent. To disable telemetry entirely, set `AIDE_TELEMETRY=off` in your environment.
 
-The one network surface is opt-in PostHog telemetry. Until you set `AIDE_TELEMETRY=on` in your environment, aide-memory makes **zero telemetry network calls**. When you do opt in, only anonymized event tallies are sent (event type, a SHA256-hashed `hostname:username` for deduplication, platform, Node version). Memory content, code, file paths, query strings, and any other user-identifying data are never sent.
-
-`aide-memory stats` (the local-only analytics dashboard) runs against a separate local-SQLite writer and is independent of the PostHog opt-in.
+`aide-memory stats` (the local-only analytics dashboard) runs against a separate local-SQLite writer and is independent of the PostHog flag.
 
 ## How does it compare to claude-mem?
 
