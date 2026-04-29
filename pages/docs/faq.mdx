@@ -28,7 +28,7 @@ The one network surface is anonymized PostHog telemetry, on by default. Each eve
 
 ## How does it compare to claude-mem?
 
-[claude-mem](https://github.com/thedotmack/claude-mem) is the established project in this space (~70k stars, multi-editor support across Claude Code, Cursor, Gemini CLI, OpenCode, OpenClaw). Its capture is continuous: a PostToolUse hook records observations during the session, and a Stop hook compresses them into a session summary that gets injected at the start of the next session. On-demand drilling is via a 3-tool MCP search workflow.
+[claude-mem](https://github.com/thedotmack/claude-mem) is the more established project in this space, with editor support across Claude Code, Cursor, Gemini CLI, OpenCode, and OpenClaw. Its capture is continuous: a PostToolUse hook records observations during the session, and a Stop hook compresses them into a session summary that gets injected at the start of the next session. On-demand drilling is via a 3-tool MCP search workflow.
 
 aide-memory takes a different shape. Capture is event-typed (correction detection, periodic reflection, file-read prompt) rather than continuous; recall is per-file scoped (a small nudge when the agent reads a file with matching memories) rather than session-start broad-injection; storage is JSON files in your repo with git as the team-sync path rather than SQLite + optional Chroma.
 
@@ -249,6 +249,10 @@ npx aide-memory config hooks.visible false
 
 ## Can I use aide-memory without git?
 
-Yes. aide-memory works in any project, git or not. Memories are stored locally in `.aide/` either way. Without git, you don't get automatic team sync and the `post-checkout` rebuild hook isn't installed; everything else (capture, recall, search, layers, scoping) works the same. If you hit something that doesn't, [open an issue](https://github.com/aide-memory/aide-memory/issues).
+Yes. Memories are stored locally in `.aide/` either way. Without git, you don't get automatic team sync and the `post-checkout` rebuild hook isn't installed; everything else (capture, recall, search, layers, scoping) works the same. If you hit something that doesn't, [open an issue](https://github.com/aide-memory/aide-memory/issues).
+
+## What if MCP isn't enabled yet but the agent wants to remember something?
+
+When MCP isn't available (e.g. you ran `aide-memory init` and haven't restarted the editor yet), the agent can fall back to writing JSON lines to `.aide/pending-memories.jsonl`. On the next MCP server start, those entries get ingested into the proper store automatically. So a correction captured before MCP is wired doesn't get lost; it just lands when the server first starts. If you notice memories not appearing after a restart, [open an issue](https://github.com/aide-memory/aide-memory/issues).
 
 To sync manually between machines, copy the `.aide/` directory.
