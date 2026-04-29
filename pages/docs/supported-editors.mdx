@@ -13,7 +13,7 @@ Both Claude Code and Cursor may need a fresh session (or editor restart) after `
 - ⚠ partial support (see footnote)
 - 📝 rule template only (no hook / MCP wiring yet)
 
-## Capability matrix
+## Per-editor table
 
 | Capability | Claude Code | Cursor | Codex | Copilot | Windsurf |
 |---|---|---|---|---|---|
@@ -56,9 +56,9 @@ Both Claude Code and Cursor may need a fresh session (or editor restart) after `
 
 **Claude Code** is the reference adapter. Every capability listed here works as designed. aide-memory's development cadence validates against Claude Code first; other adapters catch up.
 
-**Cursor** ships with aide-memory at strong parity with Claude Code. `aide-memory init` writes `.cursor/hooks.json`, `.cursor/mcp.json`, and `.cursor/rules/aide-memory.mdc` (the last one auto-regenerates on memory and config changes). Soft nudges reach the agent via `agent_message`, hard blocks render branded chrome inline. Each gap maps to an upstream Cursor bug or feature request tracked in [editors/cursor](/docs/editors/cursor); when Cursor fixes a thread, the adapter upgrades and the workaround retires.
+**Cursor** ships with aide-memory at strong parity with Claude Code. `aide-memory init` writes `.cursor/hooks.json`, `.cursor/mcp.json`, and `.cursor/rules/aide-memory.mdc` (the last one auto-regenerates on memory and config changes). Soft nudges reach the agent via `agent_message`, hard blocks render branded chrome inline. Remaining gaps are documented on the [Cursor editor page](/docs/editors/cursor).
 
-**Codex, Copilot, Windsurf** ship a curated rule template (same canonical body as Claude Code and Cursor, plus editor-specific frontmatter). `aide-memory init` does not yet generate hook or MCP config files for these editors; full adapters are in flight. The rule template alone gives agents the instruction to use the seven MCP tools (when wired manually), but automatic capture via hooks isn't there yet.
+**Codex, Copilot, Windsurf** ship a curated rule template today. Deeper integration may come based on user feedback. To request it, [open an issue](https://github.com/aide-memory/aide-memory/issues).
 
 ## Per-editor pages
 

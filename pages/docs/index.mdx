@@ -36,7 +36,7 @@ Six hooks fire across the session lifecycle:
 | Hook | When | What aide-memory prompts |
 |---|---|---|
 | **SessionStart** | Session begins or resumes | Injects top preferences + guidelines + priority-always memories so the agent starts informed |
-| **PreToolUse** | Before file read / edit / search | First read of a file with un-recalled scoped memories: prompts the agent to call `aide_recall`. Once recalled this session, subsequent reads are silent or soft-nudged if new memories arrive. Tunable. |
+| **PreToolUse** | Before file read / edit / search | First read of a file with un-recalled scoped memories: prompts the agent to call `aide_recall`. Once recalled this session, subsequent reads are silent or soft-nudged if some scoped memories haven't been recalled yet. Tunable. |
 | **PostToolUse** | After `aide_recall` / `aide_remember` / `aide_search` | Records what was recalled so re-reads don't re-prompt |
 | **UserPromptSubmit** | You send a message | Detects correction patterns ("no, use X instead") and prompts the agent to call `aide_remember` |
 | **Stop** | Agent finishes a turn | Periodic reflection prompt ("anything worth remembering?") on a tunable schedule (default ramps every 3 → every 5 → every 10 turns by session length) |

@@ -59,11 +59,11 @@ Hooks are small scripts the editor runs at lifecycle points. aide-memory install
 | Hook | Fires when | What aide-memory does |
 |---|---|---|
 | **SessionStart** | Session begins, resumes, or clears | Injects top preferences + guidelines + priority-always memories as session context |
-| **PreToolUse** | Before file read, edit, search, or `aide_*` MCP call | First read of a file with un-recalled scoped memories: prompts the agent to call `aide_recall`. After that, subsequent reads are silent (or soft-nudged if new memories arrive). All tunable. |
-| **PostToolUse** | After `aide_recall` / `aide_remember` / `aide_search` | Records what was recalled so re-reads of the same path don't re-prompt for the IDs already in context. If new IDs arrive that weren't in the last recall, the next read can soft-nudge for those. |
+| **PreToolUse** | Before file read, edit, search, or `aide_*` MCP call | First read of a file with un-recalled scoped memories: prompts the agent to call `aide_recall`. After that, subsequent reads are silent or soft-nudged if some scoped memories haven't been recalled yet. Tunable. |
+| **PostToolUse** | After `aide_recall` / `aide_remember` / `aide_search` | Records what was recalled so re-reads of the same path don't re-prompt for the IDs already in context |
 | **UserPromptSubmit** | User sends a message | Detects correction patterns ("no, use X instead") and prompts the agent to call `aide_remember` |
 | **Stop** | Agent finishes a turn | Periodic reflection prompt ("anything worth remembering?") on a tunable schedule (default ramps every 3 → every 5 → every 10 turns by session length) |
-| **PreCompact** | Before context compaction | Prompts the agent to save active plans/decisions; clears session tracking so post-compact reads re-prompt cleanly |
+| **PreCompact** | Before context compaction | Clears session tracking so post-compact reads re-prompt cleanly |
 
 Not every editor supports every channel. See [Supported Editors](/docs/supported-editors) for what each adapter ships today and [Hooks](/docs/hooks) for the script-by-script breakdown.
 
@@ -110,7 +110,7 @@ Memories are files. Commit them, push them, pull them. A `post-checkout` git hoo
 When the agent calls `aide_recall({paths: [...]})`:
 
 1. **Path-matched memories**: scoped globs that cover the requested paths (with parent inheritance: querying `src/` returns memories scoped under `src/`).
-2. **Sort order**: scope match first (scoped beats project-wide), then layer priority (`area_context` > `technical` > `preferences` > `guidelines` per `LAYER_ORDER` in `src/memory/recall.ts`), then scope specificity (deeper scopes rank higher) and keyword relevance.
+2. **Sort order**: scope match first (scoped beats project-wide), then layer priority (`area_context` > `technical` > `preferences` > `guidelines`), then scope specificity (deeper scopes rank higher) and keyword relevance.
 3. **Cap**: `recall.limit` (default 20) per call; remaining IDs come back as `missingIds` on the next pre-read fire so the agent can call `aide_recall({ids: [...]})` for the next batch.
 4. **Layer-diversity rebalance**: when results are below `recall.layerDiversityMinLimit` (default 5), under-represented layers swap up so each enabled layer is represented.
 

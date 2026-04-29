@@ -30,7 +30,7 @@ CLI-only operations (no MCP equivalent today): `init`, `stats`, `recall-log`, `c
 Retrieve context for an area of the codebase before planning or making changes. Recall is **path-scoped, layered, scope-specificity-ranked, and layer-diversity-balanced**:
 
 - **Path-scoped**: returns memories whose `scope` glob matches at least one of the requested paths, with parent inheritance (querying `src/` returns memories scoped under `src/`).
-- **Layered**: results sort by `area_context` first, then `technical`, then `preferences`, then `guidelines` (per `LAYER_ORDER` in `src/memory/recall.ts`).
+- **Layered**: results sort by `area_context` first, then `technical`, then `preferences`, then `guidelines`.
 - **Scope-specificity-ranked**: within a layer, scoped memories beat project-wide ones; deeper scopes beat shallower ones.
 - **Layer-diversity-balanced**: when total results are below `recall.layerDiversityMinLimit` (default 5), under-represented layers swap up so each enabled layer is represented.
 - **Bounded-paginated**: capped at `recall.limit` (default 20). If a path has more matches, the remaining IDs come back as `missingIds` on the next pre-read fire so the agent can call `aide_recall({ids: [...]})` for the next batch.
