@@ -1,8 +1,8 @@
 # aide-memory
 
-**Categorized, path-scoped, auto-captured and recalled memory for AI coding agents and teams.**
+**Auto-captured, auto-recalled, path-scoped memory for AI coding agents and teams.**
 
-aide-memory is a typed memory store, hook layer, and MCP server that runs locally alongside your editor. It captures decisions, preferences, and technical context as they happen, recalls the right ones when the agent is in the relevant area, and shares them with your teammates over git.
+aide-memory captures decisions, preferences, and technical context as you work, recalls them when the agent is in the relevant area, and shares them with your teammates over git.
 
 ```bash
 npx aide-memory init
@@ -14,16 +14,16 @@ Free. Local-first. No account required.
 
 ## The gap aide-memory closes
 
-Static rules files (CLAUDE.md, .cursorrules) and skills cover always-on guidance and procedures. They're a starting point, but a few things they don't do:
+Rules files (CLAUDE.md, .cursorrules) and skills cover always-on guidance and procedures. They work well for that, but they leave gaps:
 
-- **Categorized layers and area scoping.** A team-wide guideline, a personal preference, a decision-for-this-area, and a fact about the stack all blur into one flat file. The whole file gets injected on every turn, even when most of it isn't relevant to the area the agent just opened.
-- **Drift over time.** Rules files don't always get updated when reality changes; not all area-specific context fits cleanly in one document; updates are manual.
-- **Cross-session gaps.** The fix you taught your agent yesterday isn't in today's session by default. Things get re-learned every time.
-- **Cross-teammate gaps.** When a teammate opens the same area you've been working in, their agent starts fresh too. Some of what you learned never reaches them.
-- **Tool-specific memory.** What you teach Claude Code today doesn't travel to Cursor (or whatever tool your teammate uses). Project memory should be tool-agnostic; with rules files alone, it isn't.
-- **Always-on injection only.** Rules files are injected wholesale on every turn. There's no per-area, per-file recall: either the whole file lands in context every turn (overcrowding) or nothing does. There's no automatic prompt for the agent to pull a relevant subset based on what file it just opened.
+- **No area scoping.** Everything blurs into one flat file. The whole file gets injected every turn, even when most of it isn't relevant to what the agent is working on.
+- **Manual updates.** Rules files don't stay current on their own. Area-specific context doesn't fit cleanly in one document.
+- **Cross-session gaps.** The fix you taught your agent yesterday isn't in today's session by default.
+- **Cross-teammate gaps.** When a teammate opens the same area you've been working in, their agent starts fresh. Much of what you learned doesn't carry over.
+- **Tool-specific.** What you teach Claude Code doesn't travel to Cursor, or vice versa.
+- **Unscoped recall.** The whole file lands in context every turn. There's no prompt for the agent to pull a relevant subset based on the file it just opened.
 
-aide-memory addresses each of these without replacing your rules files. They coexist.
+aide-memory fills these gaps alongside your rules files. They coexist.
 
 ---
 
@@ -42,7 +42,7 @@ Six hooks fire across the session lifecycle:
 | **Stop** | Agent finishes a turn | Periodic reflection prompt ("anything worth remembering?") on a tunable schedule (default ramps every 3 → every 5 → every 10 turns by session length) |
 | **PreCompact** | Before context compaction | Clears session tracking so post-compact reads re-prompt cleanly |
 
-The rules file written at init also nudges the agent to call `aide_remember` on important corrections and decisions. Capture isn't purely hook-driven; the rules guide the agent too.
+The rules file written at init also guides the agent to call `aide_remember` on corrections and decisions.
 
 ### 2. Memories are scoped to code paths and ordered by layer
 
@@ -59,11 +59,11 @@ Recall ordering: `area_context` ranks first (most specific to a code area), then
 | **area_context** | A decision or constraint specific to a code area | "The billing module is event-sourced; new code appends events, never mutates balances directly" |
 | **guidelines** | A team-wide or project-wide principle | "Public API responses use `{error: {code, message}}` envelopes for any non-2xx status" |
 
-`preferences` further splits into `personal/` (gitignored, private to you) and `shared/` (committed, team-visible). The other three layers are team-visible by default. The default of `shared` for new preferences is configurable per-project; per-call, you can always override.
+`preferences` further splits into `personal/` (gitignored) and `shared/` (committed). The other three layers are team-visible by default.
 
 ### 4. File-per-memory, git-synced
 
-Each memory is one JSON file under `.aide/memories/<layer>/`. Scopes are relative paths so they work on every machine. Commit the files, push them, your teammates pull them. A `post-checkout` git hook (installed at init) rebuilds the local SQLite cache after `git pull` or branch switch so your teammates' agents see the same context yours does on their next file read.
+Each memory is one JSON file under `.aide/memories/<layer>/`. Commit, push, pull. A `post-checkout` git hook rebuilds the local cache after `git pull` so your teammates' agents see the same context on their next file read.
 
 ```bash
 # You captured a decision worth keeping
@@ -77,15 +77,15 @@ git pull
 # "1 memory exists for src/billing/. Call aide_recall."
 ```
 
-Memories are files; git is the sync. No sync service, no auth, no daemons.
+No sync service, no auth, no daemons.
 
 ### 5. Project memory, not tool memory
 
-Memories belong to your project, not to whichever tool you're using to talk to the agent. The same `.aide/memories/` directory is read by Claude Code and Cursor today; switch tools or hand off to a teammate and your project's memory store is right there. More editor adapters may come depending on user feedback.
+Memories belong to your project, not to whichever tool you're using. The same `.aide/memories/` directory is read by Claude Code and Cursor today. Switch tools or hand off to a teammate and the memory store comes with the codebase.
 
-### 6. No extra inference cost
+### 6. Uses your existing agent
 
-aide-memory is a typed store, hook dispatcher, and MCP server. It does no LLM calls of its own. The model in the editor you already use does all the reasoning.
+aide-memory does no LLM calls of its own. The model in your editor does the reasoning. The token cost is the tool descriptors (~2,900 tokens once per session) plus whatever the agent recalls.
 
 ---
 
@@ -107,7 +107,7 @@ Head to the [Quick Start](/docs/quick-start) guide.
 Or read more first:
 
 - [Concepts](/docs/concepts), the editor-agnostic mental model
-- [Configuration](/docs/configuration), every knob and what it does
+- [Configuration](/docs/configuration), all config keys and what they do
 - [Reference](/docs/reference), the 7 MCP tools your agent calls plus all 13 CLI commands, side-by-side
 - [Hooks](/docs/hooks), per-hook walkthrough
 - [Supported Editors](/docs/supported-editors), capability summary and per-editor pages

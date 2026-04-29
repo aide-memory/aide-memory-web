@@ -54,7 +54,7 @@ How specific a scope must be to surface per-file vs SessionStart-only is **tunab
 
 ## 4. Hooks
 
-Hooks are small scripts the editor runs at lifecycle points. aide-memory installs them at `aide-memory init`. The agent does not call them; the editor does. Hooks fire automatically at the right lifecycle moments so capture and recall happen without anyone needing to invoke them by hand.
+Hooks are small scripts the editor runs at lifecycle points. aide-memory installs them at `aide-memory init`. They fire automatically so capture and recall happen without manual invocation.
 
 | Hook | Fires when | What aide-memory does |
 |---|---|---|
@@ -69,11 +69,11 @@ Not every editor supports every channel. See [Supported Editors](/docs/supported
 
 ## 5. MCP tools
 
-aide-memory ships a local MCP server exposing seven tools. Both the agent and you can call them: the agent invokes them during conversation; you can run the equivalent CLI command. See [Reference](/docs/reference) for the full parameter listing.
+aide-memory ships a local MCP server with seven tools. The agent calls them during conversation; you can run the equivalent CLI commands. See [Reference](/docs/reference) for full details.
 
 | Tool | Purpose |
 |---|---|
-| `aide_recall` | Path-scoped, layer-ordered, scope-specificity-ranked, layer-diversity-balanced retrieval |
+| `aide_recall` | Retrieve memories for a code area, ranked by layer and scope specificity |
 | `aide_remember` | Store a new memory (layer + scope + what/why + tags) |
 | `aide_update` | Edit an existing memory's content, scope, or tags |
 | `aide_forget` | Permanently delete a memory (no archive mode) |
@@ -99,7 +99,7 @@ aide-memory ships a local MCP server exposing seven tools. Both the agent and yo
     └── recalled-paths-<sid>.txt  # session-scoped tracking
 ```
 
-The JSON files are the source of truth. SQLite is a rebuildable cache; if `.aide/cache/memory.db` is missing it should reconstruct from the JSON on the next run. Recall stats (`recalled_count`, `last_recalled_at`) live only in the cache by design, so per-machine usage data doesn't bleed into git history.
+JSON files are the source of truth. SQLite is a rebuildable cache. Recall stats live only in the cache so per-machine usage data doesn't end up in git.
 
 ## 7. Sync via git
 
@@ -118,9 +118,9 @@ For conceptual searches ("where do we handle auth tokens?"), prefer `aide_search
 
 ## 9. What aide-memory does not do
 
-- **No LLM calls of its own.** The model in your editor does the reasoning. aide-memory is a typed store, hook dispatcher, and MCP server. No extra inference cost.
-- **No background distillation.** Memories are exactly what you (or the agent on your behalf) wrote. If you want a memory to read differently, edit the file or call `aide_update`. Future enhancements may add summarization, but that's not what's shipping today.
-- **No remote storage.** Memory content lives on your disk. Anonymized usage counts ship to PostHog by default; disable with `AIDE_TELEMETRY=off`.
+- **No LLM calls of its own.** The model in your editor does the reasoning.
+- **No background distillation.** Memories are what you (or the agent on your behalf) wrote. Call `aide_update` to change them.
+- **No remote storage.** Memory content stays on your disk. Anonymized usage counts ship to PostHog by default; disable with `AIDE_TELEMETRY=off`.
 
 ---
 

@@ -1,10 +1,8 @@
 # Supported editors
 
-aide-memory is editor-agnostic at the core: the memory store, MCP tools, and hook dispatcher are the same across every tool. Each editor integration is an **adapter** that translates aide-memory's canonical events into that editor's config shape and hook I/O contract. This page is the honest accounting of what each adapter ships today.
+aide-memory was originally built for Claude Code and expanded to Cursor. Both have full hook + MCP wiring at `aide-memory init`. Codex, Copilot, and Windsurf ship a rules template today; deeper integration may come based on user feedback.
 
-**TL;DR.** aide-memory was originally built around Claude Code and has expanded to Cursor; both have full hook + MCP wiring at `aide-memory init`. Codex, Copilot, and Windsurf ship a rules template today; broader integration may come based on user feedback. For per-editor setup and behavior, see the editor pages below.
-
-Both Claude Code and Cursor may need a fresh session (or editor restart) after `aide-memory init` so the MCP server registers. Cursor adds a second step: toggle the aide-memory MCP server ON in Settings → MCP.
+Both editors may need a fresh session (or restart) after `aide-memory init` so the MCP server registers. Cursor adds a second step: toggle the aide-memory MCP server ON in Settings → MCP.
 
 ## Legend
 
@@ -54,7 +52,7 @@ Both Claude Code and Cursor may need a fresh session (or editor restart) after `
 
 ## Current state
 
-**Claude Code** is the reference adapter. Every capability listed here works as designed. aide-memory's development cadence validates against Claude Code first; other adapters catch up.
+**Claude Code** is the reference adapter. All capabilities listed here work as designed.
 
 **Cursor** ships with aide-memory at strong parity with Claude Code. `aide-memory init` writes `.cursor/hooks.json`, `.cursor/mcp.json`, and `.cursor/rules/aide-memory.mdc` (the last one auto-regenerates on memory and config changes). Soft nudges reach the agent via `agent_message`, hard blocks render branded chrome inline. Remaining gaps are documented on the [Cursor editor page](/docs/editors/cursor).
 

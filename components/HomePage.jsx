@@ -49,14 +49,12 @@ export default function HomePage() {
         <div className="hero-grid" />
 
         <div className="hero-content">
-          <div className="hero-brand">aide-memory</div>
-          <div className="hero-badge">Auto-captured. Auto-recalled. Path-scoped. Team-synced. Cross-tool.</div>
           <h1 className="hero-title">
             Your agent <span className="hero-highlight">remembers.</span>
           </h1>
           <p className="hero-team-note">And your team&apos;s agents too.</p>
           <p className="hero-subtitle">
-            Categorized, path-scoped, auto-captured and recalled memory for AI coding agents and teams.
+            Auto-captured, auto-recalled, path-scoped memory for AI coding agents and teams.
           </p>
 
           <div className="hero-install">
@@ -87,30 +85,30 @@ export default function HomePage() {
         <div className="problem-grid">
           <div className="problem-card">
             <h3>Rules files don&apos;t scale</h3>
-            <p>One flat file, no path scoping, no categorized layers, manual to update. They get injected globally on every turn, even when most of it isn&apos;t relevant to the file the agent just opened, costing tokens and crowding context for things that don&apos;t apply.</p>
+            <p>One flat file, no path scoping, no categorized layers, manual to update. The whole file gets injected on every turn, crowding context with things that don&apos;t apply to the area the agent is working in.</p>
           </div>
           <div className="problem-card">
             <h3>Cross-session and cross-teammate gaps</h3>
-            <p>The fix you taught your agent yesterday isn&apos;t in today&apos;s session by default. Your teammates&apos; agents start fresh too, learning some of the same things, some different things, none of it shared.</p>
+            <p>The fix you taught your agent yesterday isn&apos;t in today&apos;s session by default. When a teammate opens the same area, their agent starts fresh too, with little of what you learned carrying over.</p>
           </div>
           <div className="problem-card">
             <h3>Tool-specific memory</h3>
-            <p>You can copy a CLAUDE.md to .cursorrules manually, but the conventions you teach your agent in one tool don&apos;t carry to the other on their own. Switch tools (or hand off to a teammate on a different tool) and your project context doesn&apos;t come with you unless someone moves the file.</p>
+            <p>You can copy rules files between tools manually, but what you teach your agent in one tool doesn&apos;t carry to the other on its own. Switch tools or hand off to a teammate on a different tool and your project context stays behind.</p>
           </div>
           <div className="problem-card">
-            <h3>Manual capture, always-on recall</h3>
-            <p>Capturing context to a rules file is a manual edit. Recall is the opposite problem: rules files inject every line, every turn, even when most of it isn&apos;t relevant to the file the agent just opened. aide-memory automates capture (hooks prompt the agent on corrections and decisions) and scopes recall to the relevant area instead of dumping everything.</p>
+            <h3>Manual capture, unscoped recall</h3>
+            <p>Capturing context means manually editing a rules file. Recall is unscoped: the whole file gets injected every turn whether it&apos;s relevant or not. aide-memory automates capture via hooks and scopes recall to the area the agent is working in.</p>
           </div>
         </div>
       </div>
 
       <div className="features-section">
-        <h2 className="section-heading">How aide-memory is different</h2>
+        <h2 className="section-heading">How it&apos;s built differently</h2>
         <div className="features-grid">
           <div className="feature-card">
             <div className="feature-icon">&#x1f9e0;</div>
             <h3>Prompted at the right moments</h3>
-            <p>When the agent opens a relevant file, it gets prompted to recall what was already learned for that area. When you correct the agent, the hook detects the correction and prompts it to store the lesson. Decisions and non-obvious findings are picked up via the periodic Stop reflection.</p>
+            <p>When the agent opens a file with relevant memories, it gets prompted to recall them. When you correct the agent, the hook detects it and prompts it to store the lesson. Decisions and findings surface via periodic reflection.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f4cd;</div>
@@ -130,7 +128,7 @@ export default function HomePage() {
           <div className="feature-card">
             <div className="feature-icon">&#x26a1;</div>
             <h3>Nudge, don&apos;t dump</h3>
-            <p>When a relevant file is opened and memories haven&apos;t been recalled this session, a small (~20 token) nudge tells the agent that memories exist for the path; the agent decides which ones to pull. The aide-memory rules file (small) is injected per turn so the agent knows when to use the MCP tools, but memory bodies themselves come in on demand.</p>
+            <p>A small nudge tells the agent memories exist for the path it just opened. The agent decides whether to pull them. A small rules file is injected per turn so the agent knows how to use the tools, but memory content comes in on demand, scoped to the area.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f6e0;</div>
@@ -145,7 +143,7 @@ export default function HomePage() {
           <div className="feature-card">
             <div className="feature-icon">&#x1f4b0;</div>
             <h3>Uses your existing agent</h3>
-            <p>aide-memory does no LLM calls of its own. The model in the editor you already pay for does all the reasoning. Your token bill is what the agent spends on tool descriptors plus the recall payloads it pulls (scoped to the file it&apos;s touching), not a separate inference layer.</p>
+            <p>aide-memory does no LLM calls of its own. The model in your editor does the reasoning. The token cost is the tool descriptors (~2,900 tokens once per session) plus whatever the agent recalls for the area it&apos;s working in.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f527;</div>
@@ -170,7 +168,7 @@ export default function HomePage() {
             <div className="step-number">2</div>
             <div className="step-content">
               <h3>Capture as you work</h3>
-              <p>When you correct the agent, the correction is detected and the agent gets prompted to store the lesson. At the end of a turn, a periodic reflection nudges the agent to save any decisions or non-obvious findings. Before context compaction, session tracking is cleared so the next turn re-prompts cleanly.</p>
+              <p>Corrections are detected automatically and the agent gets prompted to store them. A periodic reflection at the end of turns picks up decisions and findings. Session tracking resets before context compaction so recall stays clean.</p>
             </div>
           </div>
           <div className="step">
@@ -178,7 +176,7 @@ export default function HomePage() {
             <div className="step-content">
               <h3>Recall in your next session, or your teammate&apos;s</h3>
               <code className="step-code">8 memories exist for src/checkout/**. Call aide_recall if relevant.</code>
-              <p>When the agent opens a file with un-recalled scoped memories, the hook prompts <code>aide_recall</code> and the agent pulls back only what applies to that area. Commit <code>.aide/memories/</code> and your teammates&apos; agents pick up the same memories on their next read of the same area.</p>
+              <p>The hook prompts <code>aide_recall</code> and the agent pulls back what applies to that area. Commit <code>.aide/memories/</code> and your teammates&apos; agents pick up the same context on their next read.</p>
             </div>
           </div>
         </div>
