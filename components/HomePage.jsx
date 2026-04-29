@@ -103,7 +103,7 @@ export default function HomePage() {
       </div>
 
       <div className="features-section">
-        <h2 className="section-heading">How it&apos;s built differently</h2>
+        <h2 className="section-heading">How it&apos;s built different</h2>
         <div className="features-grid">
           <div className="feature-card">
             <div className="feature-icon">&#x1f9e0;</div>
@@ -143,7 +143,7 @@ export default function HomePage() {
           <div className="feature-card">
             <div className="feature-icon">&#x1f4b0;</div>
             <h3>Uses your existing agent</h3>
-            <p>aide-memory does no LLM calls of its own. The model in your editor does the reasoning. The token cost is the tool descriptors (~2,900 tokens once per session) plus whatever the agent recalls for the area it&apos;s working in.</p>
+            <p>aide-memory does no LLM calls of its own. The model in your editor does the reasoning. The overhead is ~2,900 tokens for aide-memory&apos;s seven MCP tool definitions (loaded once per session) plus the memories the agent pulls back per area.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">&#x1f527;</div>
