@@ -674,6 +674,17 @@ html[class~="light"] .nextra-content figure pre {
   color: #e2e8f0 !important;
 }
 
+/* Light mode: force syntax-highlighted tokens to use the dark-theme color
+ * variants since our pre background stays dark. Without this override,
+ * shiki/rehype-pretty-code applies the --shiki-light token colors (designed
+ * for a white background) on top of #0f1729 — unreadable. */
+html[class~="light"] .nextra-content pre code span,
+html[class~="light"] .nextra-content figure pre code span,
+html[class~="light"] .nextra-content div[data-rehype-pretty-code-fragment] pre code span {
+  color: var(--shiki-dark, #e2e8f0) !important;
+  background-color: var(--shiki-dark-bg, transparent) !important;
+}
+
 .nextra-content pre code {
   background: transparent !important;
   border: none !important;
