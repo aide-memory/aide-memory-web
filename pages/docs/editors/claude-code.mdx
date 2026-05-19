@@ -35,21 +35,23 @@ The agent calls `aide_recall({paths: [...]})`, the PostToolUse hook records the 
 
 **When the agent calls `aide_recall`.** Standard Claude Code tool-call chrome: you see the request, the response, and whatever the agent summarizes. The branded `aide-memory · ...` status line is reserved for hook fires, not MCP tool calls.
 
-**When you type a correction.** Patterns like "no, use X instead" / "actually..." trip the UserPromptSubmit hook. It injects a nudge:
+**When you type a correction.** Patterns like "no, use X instead" / "actually..." trip the UserPromptSubmit hook. By default (`hooks.correction.escalate = "off"`) it emits a soft in-turn nudge via `hookSpecificOutput.UserPromptSubmit.additionalContext`:
 
 ```
-BEFORE doing anything else, store this correction via aide_remember with layer=preferences and scope=<current area>. Confirm after storing.
+Your prompt may contain a correction or convention worth persisting. If something here applies to future work in this project — across preferences (how you work), technical (stack facts, why-decisions), area_context (decisions for this code area), or guidelines (team rules) — call aide_remember on the matching layer. Otherwise respond as normal.
 ```
 
-The agent calls `aide_remember` in the same turn.
+The agent sees the nudge as extra context appended to your message and decides whether to store. No extra turn forced. Set `hooks.correction.escalate = "block"` to also write a flag so the next `Stop` fire reminds the agent with `decision:"block"` if no memory was stored.
 
-**When a session starts or resumes.** The SessionStart hook injects top preferences + guidelines + priority-always memories (bounded by `injection.maxChars`, default 1200). It also re-fires after context compaction.
+**When a session starts.** The SessionStart hook injects top preferences + guidelines + priority-always memories (bounded by `injection.maxChars`, default 1200). On `source: "resume"` the hook no-ops — your prior transcript already carries the context and the recall tracking, so re-injecting would duplicate. On `clear` and `compact` it clears tracking + re-injects.
 
 **When the agent finishes a turn.** The Stop hook runs on a configurable schedule (default ramps every 3 turns through turn 9, every 5 through turn 29, every 10 afterwards) and prompts:
 
 ```
-Anything worth remembering? Call aide_remember if this turn produced a decision, correction, or non-obvious finding.
+Anything from this turn worth persisting for future sessions in this project? Could touch preferences, technical, area_context, or guidelines. If yes, call aide_remember on the matching layer. Otherwise stop.
 ```
+
+Default `hooks.stop.mode = "block"` delivers this prompt via `decision:"block"` + a friendly brand chrome (`aide-memory · checkpoint — anything worth remembering?`). The Claude Code TUI collapses the platform's "Stop hook error:" label behind ctrl+o when a `systemMessage` is present, so the brand chrome is the primary visible line. Set `hooks.stop.mode = "off"` to silence scheduled prompts entirely.
 
 ## Troubleshooting
 

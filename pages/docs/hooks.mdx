@@ -78,34 +78,40 @@ Default hooks.stop.schedule:
   Phase 3 (turns 30+):          every 10 turns  (long session)
 ```
 
-When it does fire, the hook prompts the agent:
+When it does fire (default `hooks.stop.mode = "block"`), the hook emits a softened prompt with `decision:"block"` + brand chrome:
 
 ```
-Anything worth remembering? Call aide_remember if this turn produced a decision, correction, or non-obvious finding.
+reason: Anything from this turn worth persisting for future sessions in this project? Could touch preferences, technical, area_context, or guidelines. If yes, call aide_remember on the matching layer. Otherwise stop.
+systemMessage: aide-memory · checkpoint — anything worth remembering?
 ```
+
+Claude Code's TUI collapses the "Stop hook error:" label behind ctrl+o when `systemMessage` is present, so the brand chrome is the primary visible line. The "block" channel is unavoidable on Claude Code — Stop hooks don't accept `hookSpecificOutput.additionalContext`, so any text reaching the agent on Stop must go through `decision:"block"` or `continue:false`. See `src/memory/hooks/claude-code-protocol.ts` for the platform-conformance source of truth.
 
 Override via:
 
 ```bash
+aide-memory config hooks.stop.mode off                         # silence scheduled Stop fires entirely
 aide-memory config hooks.stop.schedule '[{"every":5}]'         # every 5, forever
-aide-memory config hooks.stop.schedule '[{"every":999999}]'    # effectively off
+aide-memory config hooks.stop.schedule '[{"every":999999}]'    # effectively off (alt to mode=off)
 ```
 
 ## UserPromptSubmit hook (correction detection)
 
 **File:** `scripts/hooks/detect-correction.sh`
 
-Fires when you send a message. Scans the message for three pattern families and injects a **soft nudge** (never blocking, since blocking on UserPromptSubmit would reject your message entirely):
+Fires when you send a message. Scans the message for three pattern families and emits a **soft in-turn hint** via `hookSpecificOutput.UserPromptSubmit.additionalContext` (the platform-supported soft channel — the agent sees the prompt as extra context appended to your message, no extra turn is forced):
 
-| Pattern | Example | Suggested action |
+| Pattern | Example | Soft hint chrome |
 |---|---|---|
-| Correction | "no, don't", "actually,", "use X instead", "stop using" | `aide_remember` with layer `preferences` or `technical` |
-| Decision | "let's use", "we should", "go with", "decided to", "from now on" | `aide_remember` with layer `area_context` or `technical` |
-| Preference | "I prefer", "always use", "never use", "my style is" | `aide_remember` with layer `preferences` |
+| Correction | "no, don't", "actually,", "use X instead", "stop using" | `aide-memory · possible correction detected — consider aide_remember` |
+| Decision | "let's use", "we should", "go with", "decided to", "from now on" | `aide-memory · possible decision detected — consider aide_remember` |
+| Preference | "I prefer", "always use", "never use", "my style is" | `aide-memory · possible preference detected — consider aide_remember` |
 
-Only the first matching pattern fires. The hook does not store anything itself; it tells the agent what was detected and prompts the appropriate `aide_remember` call.
+The agent context payload is identical across all three (it lists all four layers and asks the agent to pick the matching one). Only the first matching pattern fires per message. Regex skips quoted text, fenced code blocks, and meta-references ("the correction prompt", "correction regex") so discussing corrections doesn't trigger detection.
 
-Disable with `aide-memory config hooks.correction.enabled false`.
+**Optional escalation.** Set `hooks.correction.escalate = "block"` to also write a `correction-pending-<sid>.txt` flag — if the agent doesn't call `aide_remember` this turn, the next `Stop` fire emits `decision:"block"` with a correction-not-stored reminder. Default `"off"` means the in-turn soft hint is the only signal.
+
+Disable the whole correction system with `aide-memory config hooks.correction.enabled false`.
 
 ## PreCompact hook
 
@@ -132,11 +138,15 @@ All recall tracking is session-scoped via `session_id` (from hook stdin JSON). E
 Each hook can be disabled or tuned independently:
 
 ```bash
-# Silence the Stop reflection prompt (effectively, by setting a huge interval)
-aide-memory config hooks.stop.schedule '[{"every":100}]'
+# Silence the Stop reflection prompt
+aide-memory config hooks.stop.mode off                                # cleanest — schedule still ticks but emit is silent
+aide-memory config hooks.stop.schedule '[{"every":999999}]'           # alt — schedule itself never fires
 
-# Disable correction detection
+# Disable correction detection (master switch)
 aide-memory config hooks.correction.enabled false
+
+# Enable the correction-not-stored reminder (default off — opt in to escalate)
+aide-memory config hooks.correction.escalate block
 
 # Disable the file-read nudge and blocking
 aide-memory config hooks.read.maxBlocks 0
