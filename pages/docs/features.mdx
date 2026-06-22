@@ -9,7 +9,7 @@ A scannable cheat sheet of what's in the box. For the mental model behind these,
 - **6 hooks** wired into the editor at init
 - **4 typed memory layers** with a personal/shared split for preferences
 - **Local-first storage** (JSON files + SQLite cache, no cloud)
-- **Cross-editor** (Claude Code + Cursor today)
+- **Cross-editor** (Claude Code, Cursor + Devin CLI today)
 - **Free** for individuals; potential team/pro tiers later
 
 ## Capture
@@ -60,6 +60,7 @@ Six hooks fire automatically in your editor:
 
 - **Claude Code**: reference adapter, every feature works as designed. `aide-memory init` writes `.claude/settings.json`, `.mcp.json`, `.claude/rules/aide-memory.md`. Restart Claude Code after init so it picks up the new MCP server.
 - **Cursor**: full hook + MCP wiring. `aide-memory init` writes `.cursor/hooks.json`, `.cursor/mcp.json`, and a dynamically-regenerated `.cursor/rules/aide-memory.mdc`. **Restart Cursor (Cmd+Q) and enable the aide-memory MCP server** in Cursor → Settings → MCP, both required first time.
+- **Devin CLI**: full hook + MCP wiring (Devin's hooks are Claude-Code-compatible). `aide-memory init` writes a single `.devin/config.json` (hooks + MCP server) plus a `.devin/skills/aide-memory/SKILL.md` skill — all scoped to `.devin/`. Pre-tool nudges are soft (Devin's hard block is non-recoverable) and aide-memory activity shows via MCP tool-call cards rather than branded chrome. See the [Devin editor page](/docs/editors/devin).
 - **Codex / Copilot / Windsurf**: rules template only at launch. Deeper integration may come based on user feedback.
 
 See [Supported Editors](/docs/supported-editors) for the full per-editor table.

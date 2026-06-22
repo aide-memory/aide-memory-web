@@ -11,7 +11,7 @@ A short list of traits aide-memory carries together. Each individual trait isn't
 - **Layered + scoped recall.** Four typed memory layers (preferences / technical / area_context / guidelines) plus glob scopes (e.g. `src/auth/**`). The agent gets memories relevant to the area it's working in, ordered by how specific the layer is.
 - **Hooks prompt at the right moments.** Six editor hooks fire across the session lifecycle so capture and recall happen without anyone needing to remember to call a tool.
 - **Memories as JSON files in your repo.** One file per memory under `.aide/memories/`. `git add`, `git push`, `git pull` is the team-sync path. Personal preferences are gitignored; team-shared memories travel with the repo.
-- **Single shared store across editors.** Claude Code and Cursor read the same `.aide/` directory, so a memory captured in one tool is visible to the other tool's agent without per-editor configuration.
+- **Single shared store across editors.** Claude Code, Cursor, and Devin CLI read the same `.aide/` directory, so a memory captured in one tool is visible to the other tools' agents without per-editor configuration.
 - **Local-first.** SQLite cache and JSON files on your machine. Anonymized usage counts ship to PostHog by default; disable with `AIDE_TELEMETRY=off`.
 
 ## Feature comparison
@@ -24,7 +24,7 @@ A short list of traits aide-memory carries together. Each individual trait isn't
 | **Memory structure** | 4 typed layers: preferences, technical, area_context, guidelines | Observations + session summaries, optionally per-folder timelines | 3 typed memory types (Episodic, Semantic, Procedural) on a knowledge graph, plus a Working type assembled at query time |
 | **Storage** | JSON files in repo + local SQLite cache | SQLite (FTS5) primary; optional Chroma for semantic search; Bun-managed worker on a local port | SQLite (default) or PostgreSQL/pgvector + HNSW vector index |
 | **Install** | `npm install -g aide-memory && aide-memory init` | `npx claude-mem install` (manages Bun + uv automatically) | npm package, plus optional Smithery 1-click for Claude Desktop |
-| **Editor support** | Claude Code, Cursor (full hook + MCP wiring) | Claude Code, Cursor, Gemini CLI, OpenCode, OpenClaw | MCP-first (any MCP host), plus REST / CLI / webhooks / Ollama proxy |
+| **Editor support** | Claude Code, Cursor, Devin CLI (full hook + MCP wiring) | Claude Code, Cursor, Gemini CLI, OpenCode, OpenClaw | MCP-first (any MCP host), plus REST / CLI / webhooks / Ollama proxy |
 | **Team sync** | Native via git: memories are JSON files in `.aide/`, commit to share with teammates | No git-as-sync workflow; per-machine summaries and observations | No git-as-sync workflow; JSON export/import exists but isn't a team flow |
 | **Personal/shared split** | Yes: `preferences/personal/` (gitignored), `preferences/shared/` (committed) | Not modeled | Not modeled |
 | **License** | Proprietary freeware (free to use, source not public) | AGPL-3.0 | MIT |
@@ -40,7 +40,7 @@ A short list of traits aide-memory carries together. Each individual trait isn't
 
 **Files-in-repo as the substrate.** aide-memory's `.aide/memories/` lives next to your code so `git add` / `git push` / `git pull` is the team-sync path. claude-mem and engram use database-backed stores (SQLite / Chroma / Postgres / vector indexes); they offer richer query semantics but don't have a built-in team-share workflow over git.
 
-**Editor reach.** claude-mem ships full hook integrations for Claude Code, Cursor, Gemini CLI, OpenCode, and OpenClaw today. aide-memory ships full integrations for Claude Code and Cursor with the same `.aide/` directory shared between them; further editor adapters may come based on user feedback. engram is MCP-first and works with any MCP host, plus has REST / CLI / webhooks / a transparent Ollama proxy.
+**Editor reach.** claude-mem ships full hook integrations for Claude Code, Cursor, Gemini CLI, OpenCode, and OpenClaw today. aide-memory ships full integrations for Claude Code, Cursor, and Devin CLI with the same `.aide/` directory shared between them; further editor adapters may come based on user feedback. engram is MCP-first and works with any MCP host, plus has REST / CLI / webhooks / a transparent Ollama proxy.
 
 **Personal vs team split at the storage layer.** aide-memory splits `preferences/` into `personal/` (gitignored) and `shared/` (committed) so personal style stays personal but team conventions travel with the repo. The other two tools don't model this at the storage layer.
 

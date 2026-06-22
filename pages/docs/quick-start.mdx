@@ -28,7 +28,7 @@ Output (abridged):
 
 ```
 Project initialized for aide-memory.
-Created .aide/, six hooks, MCP config, rules files for Claude Code + Cursor.
+Created .aide/, six hooks, MCP config, rules for Claude Code + Cursor + a Devin CLI skill.
 .aide/config.json seeded with every public setting.
 ```
 
@@ -67,10 +67,11 @@ Plus `.gitignore` entries for `.aide/cache/` and `.aide/memories/preferences/per
 
 ## 2. Restart your editor
 
-aide-memory's MCP server only becomes available after the editor reads `.mcp.json` (Claude Code) or `.cursor/mcp.json` (Cursor) at session start. Both editors load these once at startup.
+aide-memory's MCP server only becomes available after the editor reads `.mcp.json` (Claude Code), `.cursor/mcp.json` (Cursor), or `.devin/config.json` (Devin CLI) at session start. These editors load the config once at startup.
 
 - **Claude Code**: open a fresh session in this project (close + reopen the chat or run `/clear` and start a new session).
 - **Cursor**: **Cmd+Q** the app (don't just close the window) and reopen. Then go to **Settings → MCP**, find `aide-memory` in the list, and toggle it **ON**.
+- **Devin CLI**: start a fresh session so it picks up `.devin/config.json`. Confirm with `devin mcp list` (shows `aide-memory`) and `devin skills list` (shows `/aide-memory`).
 
 You'll know it worked when the agent can call `aide_recall`, `aide_remember`, etc. without errors. The hooks fire either way, but the hook messages tell the agent to call those tools, so they need to be available.
 
@@ -186,13 +187,13 @@ Or just edit `.aide/config.json` directly. The JSON file is the source of truth.
 
 ## 9. Working across editors
 
-aide-memory works with Claude Code and Cursor today. Install in any project:
+aide-memory works with Claude Code, Cursor, and Devin CLI today. Install in any project:
 
 ```bash
 aide-memory init
 ```
 
-Both editors read the same `.aide/memories/` directory. Memories captured in Claude Code are available in Cursor immediately, and vice versa.
+All three editors read the same `.aide/memories/` directory. A memory captured in Claude Code is available in Cursor and Devin CLI immediately, and vice versa.
 
 ## Next steps
 

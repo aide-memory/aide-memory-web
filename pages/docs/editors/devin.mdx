@@ -1,0 +1,83 @@
+# aide-memory in Devin CLI
+
+Devin CLI's hook system is **Claude-Code-compatible**, so aide-memory runs at near-Claude-Code parity. The handful of places Devin behaves differently are handled by the adapter and flagged below as observed behavior, not "issues."
+
+Everything aide-memory writes for Devin is scoped to `.devin/` — your `AGENTS.md` is never touched.
+
+For the editor-agnostic mental model see [Concepts](/docs/concepts); for the capability summary see [Supported Editors](/docs/supported-editors).
+
+## First-time setup
+
+`aide-memory init` creates (alongside the Claude Code / Cursor files):
+
+- `.devin/config.json`, a single file holding **both** the Claude-format `hooks` (SessionStart, PostCompaction, Stop, UserPromptSubmit, PreToolUse matching `read` / `edit` / `write` / `grep` / `glob` / `mcp__aide-memory__aide_*`, PostToolUse) **and** the `aide-memory` entry under `mcpServers`.
+- `.devin/skills/aide-memory/SKILL.md`, aide-memory's teaching shipped as a **Devin skill** (Devin's recommended pattern over broad always-on rules). The agent auto-invokes it when relevant (`triggers: [user, model]`), or you can run `/aide-memory`.
+- `.aide/config.json` and `.aide/memories/`, same as Claude Code.
+- `.ignore` / `.gitignore` entries.
+
+A short always-on "this project uses aide-memory; follow its hooks; consult the `aide-memory` skill" pointer is injected by the SessionStart hook, so it stays scoped to Devin without writing into your `AGENTS.md`.
+
+### Verify it's wired
+
+1. **Restart Devin / start a fresh session** after init so the MCP server registers.
+2. `devin mcp list` should show `aide-memory`.
+3. `devin skills list` should show `/aide-memory [user,model]`.
+
+## Observed runtime behavior
+
+**On a read/edit of a file with scoped memories.** The PreToolUse hook delivers a soft `aide_recall` nudge via `hookSpecificOutput.additionalContext`:
+
+```
+2 memories for src/api/users.ts. Call aide_recall({paths: ['src/api/users.ts']}).
+```
+
+The agent recalls, then continues. On Devin these nudges are always **soft** — never a hard `decision: "block"` — by design (see the note below). The skill + the SessionStart pointer make proactive recall reliable; in live testing the agent recalled and applied scoped memories before editing (including leaving out-of-scope files untouched).
+
+**When the agent calls aide-memory tools.** Devin renders MCP tool calls as cards in the transcript — you see `⏺ Called aide_recall from aide-memory` with the arguments and the returned memories, `⏺ Called aide_remember …`, etc. This is how aide-memory activity is surfaced to you on Devin (see the chrome note below).
+
+**When you type a correction.** Patterns like "actually, our convention is…" trip the UserPromptSubmit hook, which injects a soft hint via `additionalContext`. Because Devin injects `UserPromptSubmit` context **in-turn**, the agent can call `aide_remember` in the same turn — no one-turn delay. (Set `hooks.correction.escalate = "block"` for the flag-based next-Stop reminder.)
+
+**When a session starts.** The SessionStart hook injects the skill pointer plus top preferences + guidelines + priority-always memories via `additionalContext` (bounded by `injection.maxChars`). This works natively on Devin.
+
+**When the agent finishes a turn.** The Stop hook runs on the configurable schedule and prompts "Anything from this turn worth persisting…?" via `decision: "block"` — here "block" means *"don't stop yet, reflect"*, which works without aborting. `stop_hook_active` prevents loops. Set `hooks.stop.mode = "off"` to silence it.
+
+**On compaction.** Devin fires `PostCompaction` (after compaction completes), not Claude Code's `PreCompact`. aide-memory clears its per-session recall tracking so the agent re-recalls fresh. Save important context proactively as conversations grow.
+
+## How Devin differs from Claude Code
+
+| Area | Devin |
+|---|---|
+| Tool matchers | lowercase `read` / `edit` / `write` / `grep` / `glob` (handled by the adapter) |
+| Config location | both hooks + MCP live in `.devin/config.json` |
+| Rules delivery | a `.devin/skills/aide-memory` skill + a SessionStart-injected pointer (Devin has no `.devin/rules/` dir; a skill keeps it scoped + idiomatic vs a broad `AGENTS.md`) |
+| Compaction | `PostCompaction` (after) instead of `PreCompact` |
+| Pre-tool gating | **soft only** — see note below |
+| Branded chrome | not rendered — see note below |
+| Session scope | no session id in hook payloads → a single `default` recall-tracking scope |
+
+### Why pre-tool nudges are soft (no hard block)
+
+On Devin a PreToolUse `decision: "block"` is **terminal**: it renders `✗ Tool blocked: <reason>` to you but **ends the agent's turn** — the reason is not fed back into the agent loop, so the agent can't recall-and-retry the way it does on Claude Code. We verified this live, even with an imperative reason. Since a block can't be made recoverable on Devin, aide-memory never hard-blocks reads/edits there and delivers the "call aide_recall first" signal through the soft `additionalContext` channel instead, which doesn't stop the turn. (The Stop checkpoint still uses `decision: "block"`, where blocking means "keep going / reflect.")
+
+### No branded status chrome
+
+Devin doesn't render aide-memory's `systemMessage` "aide-memory · …" status lines. You see aide-memory working through Devin's native MCP tool-call cards instead (`⏺ Called aide_recall from aide-memory` …). The `hooks.visible` setting has no visible effect on Devin.
+
+## Troubleshooting
+
+**MCP server not showing.** Run `devin mcp list` from the project root; if `aide-memory` is missing, re-run `aide-memory init` and restart Devin. The server entry lives under `mcpServers` in `.devin/config.json`.
+
+**Skill not loaded.** `devin skills list` should show `/aide-memory`. If not, re-run `aide-memory init`; the skill file is `.devin/skills/aide-memory/SKILL.md`.
+
+**Hooks not firing.** Use Devin's `/hooks` slash command to list loaded hooks; they should point at this package's `scripts/hooks/`. `aide-memory init --force` re-installs.
+
+**Agent uses raw `grep` instead of `aide_search`.** The pre-search nudge fires on Devin's `grep`, but the agent may still use raw grep and miss stored knowledge for a concept query — the same behavior as Claude Code. Ask explicitly ("recall what we know about X") to force an `aide_search`.
+
+**Cursor `.mdc` YAML warning.** If the project is also Cursor-initialized, Devin reads `.cursor/rules/*.mdc` and logs a benign YAML parse warning on the Cursor rule's frontmatter. aide-memory's Devin teaching comes from the `.devin/skills/aide-memory` skill, not the Cursor rule; disable `read_config_from.cursor` in your Devin config to silence it.
+
+## Platform capabilities aide-memory uses
+
+- **`hookSpecificOutput.additionalContext`**, the soft channel for `aide_recall` nudges, session-start injection, and correction hints (reaches the agent reliably on Devin).
+- **`decision: "block"`** on the Stop hook only (reflection checkpoint; not used for pre-tool gating).
+- **`mcpServers` in `.devin/config.json`**, the aide-memory CLI runs as an MCP server over stdio; tools appear as `mcp__aide-memory__aide_*`.
+- **Devin skills** (`.devin/skills/`), the teaching is a model-invocable skill rather than a broad always-on rule.

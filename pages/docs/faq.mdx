@@ -6,11 +6,11 @@ import { Callout } from 'nextra/components'
 
 Yes. Free to use. More features coming. Source is not public; aide-memory is **proprietary freeware**, not open source.
 
-## Does it work with Cursor?
+## Does it work with Cursor and Devin CLI?
 
-Yes. aide-memory ships with full hook + MCP wiring for both Claude Code and Cursor. The `init` command writes rules files for both editors and configures the MCP server. The same `.aide/memories/` directory is read by both tools. Memories captured in Claude Code are available in Cursor immediately, and vice versa.
+Yes. aide-memory ships with full hook + MCP wiring for Claude Code, Cursor, and Devin CLI. The `init` command writes each editor's config (rules/skills + MCP server). The same `.aide/memories/` directory is read by all three tools, so a memory captured in one is available in the others immediately.
 
-After `init`, **start a fresh session in your editor** (or restart it) so the MCP server registers. On Cursor, also enable the aide-memory MCP server in **Settings → MCP**.
+After `init`, **start a fresh session in your editor** (or restart it) so the MCP server registers. On Cursor, also enable the aide-memory MCP server in **Settings → MCP**. On Devin, confirm with `devin mcp list` / `devin skills list`. Devin runs at near-Claude-Code parity since its hooks are Claude-Code-compatible — see the [Devin editor page](/docs/editors/devin) for the few differences (soft-only pre-tool nudges, MCP tool-card visibility, `PostCompaction`).
 
 ## Is it good for teams?
 

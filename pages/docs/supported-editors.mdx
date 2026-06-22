@@ -1,8 +1,10 @@
 # Supported editors
 
-aide-memory was originally built for Claude Code and expanded to Cursor. Both have full hook + MCP wiring at `aide-memory init`. Codex, Copilot, and Windsurf ship a rules template today; deeper integration may come based on user feedback.
+aide-memory was originally built for Claude Code and expanded to Cursor and Devin CLI. All three have full hook + MCP wiring at `aide-memory init`. Codex, Copilot, and Windsurf ship a rules template today; deeper integration may come based on user feedback.
 
-Both editors may need a fresh session (or restart) after `aide-memory init` so the MCP server registers. Cursor adds a second step: toggle the aide-memory MCP server ON in Settings → MCP.
+These editors may need a fresh session (or restart) after `aide-memory init` so the MCP server registers. Cursor adds a second step: toggle the aide-memory MCP server ON in Settings → MCP.
+
+Devin CLI's hook system is Claude-Code-compatible, so aide-memory runs there at near-Claude-Code parity; the few differences (soft-only pre-tool nudges, no branded chrome, `PostCompaction`, skill-based teaching) are documented on the [Devin editor page](/docs/editors/devin).
 
 ## Legend
 
@@ -13,22 +15,22 @@ Both editors may need a fresh session (or restart) after `aide-memory init` so t
 
 ## Per-editor table
 
-| Capability | Claude Code | Cursor | Codex | Copilot | Windsurf |
-|---|---|---|---|---|---|
-| `aide-memory init` generates editor config files | ✅ | ✅ | 📝 | 📝 | 📝 |
-| MCP tools available in agent sessions | ✅ | ✅ [^mcp-manual] | ⚠ [^mcp-manual] | ⚠ [^mcp-manual] | ⚠ [^mcp-manual] |
-| Hard-block on file read with scoped memories | ✅ | ✅ [^cursor-read-editor-open] | ❌ | ❌ | ❌ |
-| Hard-block on file edit with scoped memories | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Soft nudge on re-read (agent-context channel) | ✅ | ✅ [^cursor-soft] | ❌ | ❌ | ❌ |
-| Inline branded status on hard-block | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Inline branded status on soft-nudge | ✅ | ⚠ [^cursor-chrome] | ❌ | ❌ | ❌ |
-| Session-start dynamic context injection | ✅ | ⚠ [^cursor-session] | ❌ | ❌ | ❌ |
-| Session-start context after compaction | ✅ | ❌ [^cursor-compact] | ❌ | ❌ | ❌ |
-| Stop-hook reflection nudges | ✅ | ✅ [^cursor-followup] | ❌ | ❌ | ❌ |
-| Correction detection (UserPromptSubmit / beforeSubmitPrompt) | ✅ | ⚠ [^cursor-correction] | ❌ | ❌ | ❌ |
-| Pre-search nudge on Grep | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Pre-search nudge on Glob | ✅ | ❌ [^cursor-glob] | ❌ | ❌ | ❌ |
-| Auto-regenerated rule file on memory/config writes | ⚠ [^cc-regen] | ✅ | ❌ | ❌ | ❌ |
+| Capability | Claude Code | Cursor | Devin CLI | Codex | Copilot | Windsurf |
+|---|---|---|---|---|---|---|
+| `aide-memory init` generates editor config files | ✅ | ✅ | ✅ | 📝 | 📝 | 📝 |
+| MCP tools available in agent sessions | ✅ | ✅ [^mcp-manual] | ✅ [^mcp-manual] | ⚠ [^mcp-manual] | ⚠ [^mcp-manual] | ⚠ [^mcp-manual] |
+| Hard-block on file read with scoped memories | ✅ | ✅ [^cursor-read-editor-open] | ⚠ [^devin-softonly] | ❌ | ❌ | ❌ |
+| Hard-block on file edit with scoped memories | ✅ | ✅ | ⚠ [^devin-softonly] | ❌ | ❌ | ❌ |
+| Soft nudge on re-read (agent-context channel) | ✅ | ✅ [^cursor-soft] | ✅ | ❌ | ❌ | ❌ |
+| Inline branded status on hard-block | ✅ | ✅ | ❌ [^devin-chrome] | ❌ | ❌ | ❌ |
+| Inline branded status on soft-nudge | ✅ | ⚠ [^cursor-chrome] | ❌ [^devin-chrome] | ❌ | ❌ | ❌ |
+| Session-start dynamic context injection | ✅ | ⚠ [^cursor-session] | ✅ | ❌ | ❌ | ❌ |
+| Session-start context after compaction | ✅ | ❌ [^cursor-compact] | ⚠ [^devin-compact] | ❌ | ❌ | ❌ |
+| Stop-hook reflection nudges | ✅ | ✅ [^cursor-followup] | ✅ | ❌ | ❌ | ❌ |
+| Correction detection (UserPromptSubmit / beforeSubmitPrompt) | ✅ | ⚠ [^cursor-correction] | ✅ [^devin-correction] | ❌ | ❌ | ❌ |
+| Pre-search nudge on Grep | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Pre-search nudge on Glob | ✅ | ❌ [^cursor-glob] | ✅ | ❌ | ❌ | ❌ |
+| Auto-regenerated rule file on memory/config writes | ⚠ [^cc-regen] | ✅ | ⚠ [^devin-static] | ❌ | ❌ | ❌ |
 
 [^mcp-manual]: Cursor's MCP config is generated at init. Codex / Copilot / Windsurf ship a rules template only. If you add aide-memory as an MCP server manually in the editor's own MCP config, the seven tools work identically to Claude Code.
 
@@ -50,11 +52,23 @@ Both editors may need a fresh session (or restart) after `aide-memory init` so t
 
 [^cc-regen]: Claude Code does not need rules regeneration because its SessionStart hook can inject dynamic context directly. The regen pipeline exists for Cursor specifically; Claude Code's `.claude/rules/aide-memory.md` is a static template.
 
+[^devin-softonly]: On Devin a PreToolUse `decision: "block"` is **terminal** — it shows `✗ Tool blocked: <reason>` to the user but ends the agent's turn rather than feeding the reason back for recall-and-retry (verified live, even with imperative reasons). Since the block isn't recoverable, aide-memory never hard-blocks reads/edits on Devin; it delivers the "call aide_recall" signal through the soft `additionalContext` channel, which doesn't stop the turn. The agent recalls and continues. (The Stop checkpoint still uses `decision: "block"`, where blocking means "don't stop, reflect".)
+
+[^devin-chrome]: Devin does not render aide-memory's `systemMessage` "aide-memory · …" status lines. aide-memory activity is visible instead through Devin's native MCP tool-call cards (e.g. `⏺ Called aide_recall from aide-memory` with arguments and returned memories). `hooks.visible` has no effect on Devin.
+
+[^devin-compact]: Devin fires `PostCompaction` (after compaction completes), not Claude Code's `PreCompact`. aide-memory clears its per-session recall tracking there so the agent re-recalls fresh after a compaction; there's no automatic re-injection of session-start content (Devin's compaction lifecycle differs from Claude Code's `SessionStart source: "compact"`).
+
+[^devin-correction]: Devin injects `UserPromptSubmit` `additionalContext` **in-turn**, so the agent can call `aide_remember` in the same turn the correction was typed — no one-turn delay (unlike Cursor's `beforeSubmitPrompt`, which delivers the reminder on the next Stop).
+
+[^devin-static]: Devin doesn't need rules regeneration for the same reason as Claude Code — its SessionStart hook injects dynamic context directly. The teaching ships as a static `.devin/skills/aide-memory/SKILL.md` skill plus a SessionStart-injected pointer.
+
 ## Current state
 
 **Claude Code** is the reference adapter. All capabilities listed here work as designed.
 
 **Cursor** ships with aide-memory at strong parity with Claude Code. `aide-memory init` writes `.cursor/hooks.json`, `.cursor/mcp.json`, and `.cursor/rules/aide-memory.mdc` (the last one auto-regenerates on memory and config changes). Soft nudges reach the agent via `agent_message`, hard blocks render branded chrome inline. Remaining gaps are documented on the [Cursor editor page](/docs/editors/cursor).
+
+**Devin CLI** ships with aide-memory at near-Claude-Code parity, since Devin's hooks are Claude-Code-compatible. `aide-memory init` writes a single `.devin/config.json` (hooks + MCP server) plus a `.devin/skills/aide-memory/SKILL.md` skill — all scoped to `.devin/`, leaving your `AGENTS.md` untouched. Recall nudges, session-start injection, in-turn correction detection, the Stop checkpoint, and the full MCP tool surface all work. The main differences: pre-tool nudges are soft (Devin's hard block is non-recoverable), there's no branded status chrome (aide-memory shows via MCP tool-call cards), and compaction uses `PostCompaction`. Details on the [Devin editor page](/docs/editors/devin).
 
 **Codex, Copilot, Windsurf** ship a curated rule template today. Deeper integration may come based on user feedback. To request it, [open an issue](https://github.com/aide-memory/aide-memory/issues).
 
@@ -62,6 +76,7 @@ Both editors may need a fresh session (or restart) after `aide-memory init` so t
 
 - [Claude Code](/docs/editors/claude-code), reference UX, branded chrome, in-turn correction detection, full hook parity
 - [Cursor](/docs/editors/cursor), hard-block + soft-via-`agent_message`, rules-file session context, one-turn-delay corrections, per-Read editor-open coverage gap
+- [Devin CLI](/docs/editors/devin), Claude-Code-compatible hooks, soft-only pre-tool nudges, skill-based teaching, in-turn corrections, `PostCompaction`, MCP tool-card visibility
 - [Windsurf](/docs/editors/windsurf), rule template only
 - [Codex](/docs/editors/codex), rule template only
 - [Copilot](/docs/editors/copilot), rule template only
