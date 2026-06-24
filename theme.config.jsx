@@ -16,7 +16,11 @@ export default {
     },
   },
   footer: {
-    content: 'AIDE Memory © 2026, persistent memory for AI coding agents',
+    content: (
+      <span>
+        AIDE Memory © 2026, persistent memory for AI coding agents · <a href="/privacy" style={{ textDecoration: 'underline' }}>Privacy</a>
+      </span>
+    ),
   },
   darkMode: true,
   sidebar: {

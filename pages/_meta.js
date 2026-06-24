@@ -9,5 +9,9 @@ export default {
     }
   },
   'docs': 'Documentation',
-  'blog': 'Blog'
+  'blog': 'Blog',
+  'privacy': {
+    display: 'hidden',
+    theme: { sidebar: false, toc: false, breadcrumb: false, pagination: false }
+  }
 }

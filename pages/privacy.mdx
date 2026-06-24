@@ -1,0 +1,87 @@
+---
+title: Privacy Policy
+---
+
+# aide-memory — Privacy Policy
+
+_Last updated: 2026-06-24_
+
+aide-memory ("the Software") is a persistent-memory layer for AI coding agents, published by Ahmed Meky ("we", "us"). This policy explains what the Software collects, why, and how to turn it off.
+
+## Summary
+
+- The Software sends **anonymous usage telemetry by default** — you can disable it with a single environment variable.
+- It **never** transmits your memories, code, file paths, prompts, or search queries, or any information that identifies you.
+- We don't sell or share your data. There are no ads and no third-party trackers.
+
+## What we collect (anonymous usage telemetry)
+
+When telemetry is enabled (the default), the Software sends anonymized event records to our analytics provider, **PostHog**. Each record contains only:
+
+- The **event type** — e.g. which of the tools ran (`recall`, `remember`, `update`, `forget`, `search`, `list`, `import`) or a lifecycle event — plus an optional non-identifying label.
+- A **machine-hashed ID** — a one-way SHA-256 hash of your machine hostname + OS username, truncated to 16 characters. It exists only to count distinct installations and cannot be reversed to identify you.
+- **Basic environment info** — operating-system platform, CPU architecture, and Node.js version.
+
+Your IP address is discarded (sent as null, with geolocation disabled).
+
+## What we never collect
+
+The Software does **not** transmit, and we never receive:
+
+- your memories or their contents,
+- your source code,
+- file names or paths,
+- search queries or prompts,
+- project, account, or repository names,
+- your name, email, or any personal identifier.
+
+Semantic-search embeddings are computed **locally** on your machine (local model / Ollama) — no content is sent to any embedding API.
+
+## Data that stays on your machine
+
+The Software stores your memories and a local usage table on your own device (under the project's `.aide/` directory). This data **never leaves your machine** and is never sent to us. The `aide-memory stats` command reads only this local data.
+
+## How to opt out
+
+Set the environment variable:
+
+```
+AIDE_TELEMETRY=off
+```
+
+With telemetry off, the Software makes **no analytics network requests** at all.
+
+## Third parties
+
+- **PostHog** — our analytics provider; receives the anonymous events described above. See PostHog's own privacy policy for how they process data.
+- **npm registry** — the Software is installed and updated via `npm` / `npx`, which involves standard package-download requests to the npm registry.
+
+We use no advertising networks, no third-party behavioral trackers, and no data brokers.
+
+## Why we collect it
+
+Solely to understand **aggregate** usage — roughly how many installs there are and which features get used — so we can improve the Software. We do not build individual profiles.
+
+## Data retention
+
+Anonymous events are retained by our analytics provider for operational analytics. Because the data is anonymous and cannot be tied to an individual, we are unable to locate or delete a single person's records; opting out prevents any future collection.
+
+## Children
+
+The Software is a developer tool and is not directed at children under 13 (or under 16 in the EEA).
+
+## Your rights
+
+Depending on where you live (e.g. the EU's GDPR or California's CCPA), you may have rights over your personal data. Because the Software collects **no personal data** — only anonymous, non-identifying event counts — most such requests do not apply. To stop all collection, set `AIDE_TELEMETRY=off`.
+
+## Changes to this policy
+
+We may update this policy from time to time. Material changes will be reflected here with a new "Last updated" date.
+
+## Contact
+
+Questions about this policy: open an issue at [github.com/aide-memory/aide-memory/issues](https://github.com/aide-memory/aide-memory/issues).
+
+---
+
+_This policy is provided as-is and has not been reviewed by legal counsel. Consult a qualified attorney before relying on it for compliance in your jurisdiction (particularly for EU/UK users)._
